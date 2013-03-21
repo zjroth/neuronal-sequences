@@ -20,7 +20,9 @@ function eeg = LoadDatFile(filename, chID, startRead, chunkLength, nChannelsTot)
 
         % Kenji modified 061009.Otherwise if numelm == 0 an error occur.
         if numelm > 0
-            eeg(:, N_EL+1 : N_EL+numelm) = data(chID, :);
+            % The channel IDs start at zero, so we must offset
+            % these by 1 for MATLAB indexing.
+            eeg(:, N_EL+1 : N_EL+numelm) = data(chID + 1, :);
             N_EL = N_EL + numelm;
         else
             break;
