@@ -30,32 +30,32 @@ function dat2sev(fname)
     lastChunkSize = floor(Nsamples - (nChunks*chunkLength));
   end
 
-  % load .dat file and save the data of each channel into individual
-  % files
-  for i = 1:nChannelsTot
-    fNameCh = [fname '-ch' num2str(i) '.dat'];
-    fid(i) = fopen(fNameCh,'w');
-  end
+  % % load .dat file and save the data of each channel into individual
+  % % files
+  % for i = 1:nChannelsTot
+  %   fNameCh = [fname '-ch' num2str(i) '.dat'];
+  %   fid(i) = fopen(fNameCh,'w');
+  % end
 
-  for n = 1:nChunks
-    disp(['segment #' num2str(n) ' (out of ' num2str(nChunks+1) ')']);
-    eeg = LoadDatFile([fname '.dat'], 1:nChannelsTot, startRead, chunkLength, nChannelsTot);
-    startRead = startRead + chunkLength;
-    for i = 1:nChannelsTot
-      fwrite(fid(i),eeg(i,:),'int16');
-    end
-  end
-  if lastChunkSize > 0
-    disp(['segment #' num2str(nChunks+1) ' (out of ' num2str(nChunks+1) ')']);
-    eeg = LoadDatFile([fname '.dat'], 1:nChannelsTot, startRead, lastChunkSize, nChannelsTot);
-    for i = 1:nChannelsTot
-      fwrite(fid(i),eeg(i,:),'int16');
-    end
-  end
+  % for n = 1:nChunks
+  %   disp(['segment #' num2str(n) ' (out of ' num2str(nChunks+1) ')']);
+  %   eeg = LoadDatFile(fname, 1:nChannelsTot, startRead, chunkLength, nChannelsTot);
+  %   startRead = startRead + chunkLength;
+  %   for i = 1:nChannelsTot
+  %     fwrite(fid(i),eeg(i,:),'int16');
+  %   end
+  % end
+  % if lastChunkSize > 0
+  %   disp(['segment #' num2str(nChunks+1) ' (out of ' num2str(nChunks+1) ')']);
+  %   eeg = LoadDatFile(fname, 1:nChannelsTot, startRead, lastChunkSize, nChannelsTot);
+  %   for i = 1:nChannelsTot
+  %     fwrite(fid(i),eeg(i,:),'int16');
+  %   end
+  % end
 
-  for i = 1:nChannelsTot
-    fclose(fid(i));
-  end
+  % for i = 1:nChannelsTot
+  %   fclose(fid(i));
+  % end
 
   % combine all the channel files into a .sev file, the order is all the
   % data from channel 1, all the data from channel 2, and so on

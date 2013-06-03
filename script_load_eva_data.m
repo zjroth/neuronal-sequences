@@ -14,9 +14,9 @@ time2ms = @(m, s, ms) 60000 * m + 1000 * s + ms;
 
 % These three channels have a ripple in this time window (as indicated
 % by an email from Eva via Vladimir on March 12, 2013).
-chIDs           = [33, 34, 45];
-startReadInMS   = time2ms(5, 37, 200);
-chunkLengthInMS = 30;
+chIDs           = [34, 35, 46];
+startReadInMS   = time2ms(5, 36, 500);
+chunkLengthInMS = 1000;
 
 % The times given in milliseconds must be converted to sample
 % numbers (e.g., at 20 kHz, 1 ms is sample number 20000).
@@ -32,10 +32,11 @@ eeg = zeros(chunkLength, length(chIDs));
 % `LoadDatFile` should be tweaked to load data for several channels.
 for id = chIDs
   currChannelIdx = currChannelIdx + 1;
-  eeg(:, currChannelIdx) = LoadDatFile(filename_prefix, id, startRead, ...
-                                       chunkLength, nChannelsTot);
+  tmp = LoadDatFile(filename_prefix, id, startRead, ...
+                                       chunkLength, nChannelsTot)';
+  eeg(:, currChannelIdx) = tmp;
 end
 
 % Plot the results as a sanity check.
-plot(eeg);
+plot(eeg + 3000 * ones(chunkLength, 1) * [1 : currChannelIdx]);
 legend(cellstr(num2str(chIDs', 'Channel %i')))
