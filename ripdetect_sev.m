@@ -61,10 +61,8 @@ function [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate)
     dat = downsample(dat, downsampleRat);
 
     % Create a Gaussian filter for smoothing signals.
-    filtLength = 100;
-    sigma = 75;
-    filter=1/sqrt(2*pi*sigma^2)*exp(-[0:filtLength-1].^2/(2*sigma^2));
-    filter=[filter(end:-1:2) filter];
+    filter = gausswin(199);
+    filter = filter / sum(filter);
 
     % detect sharp waves based on SD-based threshold:
     fShp = computeSharpWave(dat(:, 3), dat(:, 1), filter);
