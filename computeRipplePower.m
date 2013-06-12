@@ -12,13 +12,13 @@
 %    rplPower
 %       .
 %------------------------------------------------------------------------------
-function rplPower = computeRipplePower(lfp, passBand, sampleRate)
+function rplPower = computeRipplePower(lfp, passBand, sampleRate, smoothingFilter)
     % The frequency ranges (in Hertz) for theta waves and ripple waves.
     rplFreqRange = passBand;
     % thetaFreqRange = [6, 10];
 
     %
-    rplWindow = 0.25;
+    rplTimeWindow = 0.25;
     % thetaWindow = 0.5;
 
     % Compute the actual short-time Fourier transforms for the desired
@@ -48,8 +48,8 @@ function rplPower = computeRipplePower(lfp, passBand, sampleRate)
 
     % To account for some artifacts due to computing a spectrogram, we want
     % to smooth across frequencies in the spectrograms.
-    smoothingFilter = gausswin(20);
-    smoothingFilter = smoothingFilter / sum(smoothingFilter);
+    %smoothingFilter = gausswin(20);
+    %smoothingFilter = smoothingFilter / sum(smoothingFilter);
     rplSpect = conv2(rplSpect, smoothingFilter, 'same');
 
     % We want to combine the transforms for each window. For now, we will take
