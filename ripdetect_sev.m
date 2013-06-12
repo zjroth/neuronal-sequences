@@ -65,9 +65,11 @@ function [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate)
     filter = filter / sum(filter);
 
     % detect sharp waves based on SD-based threshold:
+    disp('Computing sharp-wave signal...');
     fShp = computeSharpWave(dat(:, 3), dat(:, 1), filter);
 
     % detect ripple power
+    disp('Computing ripple-wave "power" signal...');
     fRip = computeRipplePower(dat(:, 2), [lowband, highband], sampleRate, filter);
 
     % get events with large sharpwave/ripple content
