@@ -62,7 +62,9 @@ function rplPower = computeRipplePower(lfp, passBand, sampleRate, smoothingFilte
     % `lfp` should allow us to compute R(t) = S_theta(t) / S_ripple(t) for
     % the desired values of t, except for maybe values near the ends of the
     % vectors.
-    rplPower = (rplMax - mean(rplMax)) / std(rplMax);
+    rplPowerTmp = (rplMax - mean(rplMax)) / std(rplMax);
+    rplPower = zeros(size(lfp));
+    rplPower(round(rplTimes * sampleRate)) = rplPowerTmp;
 end
 
 %------------------------------------------------------------------------------
