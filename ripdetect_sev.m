@@ -74,7 +74,7 @@ function [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate)
 
     % get events with large sharpwave/ripple content
     aboveThr = (fShp > shpThresh_multipSD) & (fRip > ripThresh_multipSD);
-    [evUp evDown] = SchmittTrigger_e(aboveThr, 0.5, 0.5);
+    [evUp evDown] = SchmittTriggerUpDownMarked(aboveThr, 0.5, 0.5);
 
     % get features for each ripple/shpw event
     nRip = 0;
