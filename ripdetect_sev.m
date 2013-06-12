@@ -1,7 +1,6 @@
 %------------------------------------------------------------------------------
 % Usage:
-%    [spw, dat, fShp, fRip] = ripdetect_sev(filename, sampleRate, ...
-%       nChannels, channels, outputFile)
+%    [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate, outputFile)
 % Description:
 %    Detect ripples in a given SEV file.
 % Arguments:
@@ -9,10 +8,6 @@
 %       The filename of the data file to read.
 %    sampleRate
 %       The sample rate of the data set.
-%    nChannels
-%       The total number of channels in the data set.
-%    channels
-%       The (1-indexed) channels to read from the data set.
 %    outputFile
 %       If this output filename is provided, the results of this simulation
 %       are written to this file.
@@ -32,8 +27,7 @@
 %    parameters are set at the beginning of the file; these parameters should
 %    be capable of being set with an optional arguments to the function call.
 %------------------------------------------------------------------------------
-function [spw, dat, fShp, fRip] = ripdetect_sev(...
-    filename, sampleRate, nChannels, channels, outputFile)
+function [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate, outputFile)
     %%%%%%%%%% parameters to play with %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % parameters for program flow control
     plotFig = false;
@@ -66,33 +60,6 @@ function [spw, dat, fShp, fRip] = ripdetect_sev(...
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % detection
-
-    % three channels:
-    % channels = positive sharp wave, ripples and negative sharp wave
-    if (nargin == 3 || isempty(channels))
-        channels = input(['Please check your recording and select ' ...
-                          '3 channels from a single shank which '   ...
-                          'contains positive sharp wave, ripples '  ...
-                          'and negative sharp wave: [1 10 15]']);
-        % [13 20 22]
-    end
-
-    sevFileName = filename;
-    listing = dir(sevFileName);
-    Nsamples = listing.bytes / (2 * nChannels);  % sec
-    disp('Loading data for ripple detection.....');
-    % ZACH: This should probably be `for channel = channels` or something
-    % like that.
-    nch = 0;
-    for currChannel = channels
-        syncName = ['chan'  num2str(currChannel)];
-        fidSev = fopen(sevFileName, 'r');
-        startRead = (currChannel - 1) * Nsamples * 2;
-        % ZACH: The variable `dat` is not pre-allocated.
-        nch = nch + 1;
-        dat(:, nch) = LoadSevFile(fidSev, startRead, Nsamples);
-    end
-    %dat = readmulti([filename '.dat'],nChannels,channels); % from .dat
 
     dat = downsample(dat, downsampleRat);
 
