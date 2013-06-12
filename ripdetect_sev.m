@@ -1,6 +1,6 @@
 %------------------------------------------------------------------------------
 % Usage:
-%    [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate, outputFile)
+%    [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate)
 % Description:
 %    Detect ripples in a given SEV file.
 % Arguments:
@@ -8,9 +8,6 @@
 %       The filename of the data file to read.
 %    sampleRate
 %       The sample rate of the data set.
-%    outputFile
-%       If this output filename is provided, the results of this simulation
-%       are written to this file.
 % Returns:
 %    spw
 %       .
@@ -27,7 +24,7 @@
 %    parameters are set at the beginning of the file; these parameters should
 %    be capable of being set with an optional arguments to the function call.
 %------------------------------------------------------------------------------
-function [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate, outputFile)
+function [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate)
     %%%%%%%%%% parameters to play with %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % parameters for program flow control
     plotFig = false;
@@ -113,14 +110,5 @@ function [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate, outputFile)
                 plotRipple(timeData, dat(range, :), fShp(range), fRip(range), event);
             end
         end
-    end
-
-    % Save the output of this trial in the given location.
-    if nargin == 5 && ~isempty(outputFile)
-        save(outputFile, 'spw');
-        MakeEvtFile_e([spw.startT; spw.peakT; spw.endT]', ...
-                      outputFile,                         ...
-                      {'ripStart', 'ripPeak', 'ripDown'}, ...
-                      sampleRate, 1);
     end
 end
