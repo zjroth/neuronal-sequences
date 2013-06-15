@@ -1,14 +1,21 @@
 %------------------------------------------------------------------------------
-% Usage:
-%    [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate)
-% Description:
-%    Detect ripples in a given SEV file.
-% Arguments:
-%    filename
-%       The filename of the data file to read.
+% USAGE:
+%
+%    [spw, dat, fShp, fRip] = DetectRipples(lfp, sampleRate, ...)
+%
+% DESCRIPTION:
+%
+%    Detect ripples...
+%
+% ARGUMENTS:
+%
+%    lfp
+%       The LFP data to work with
 %    sampleRate
-%       The sample rate of the data set.
-% Returns:
+%       The sample rate of the data set
+%
+% RETURNS:
+%
 %    spw
 %       .
 %    dat
@@ -17,17 +24,29 @@
 %       .
 %    fRip
 %       .
-% Notes:
+%
+% NOTES:
+%
 %    This function needs to be cleaned up quite a bit (and perhaps be
 %    completely rewritten). In particular, the arguments `samplRate` and
 %    `totNch` can be read in from a metadata file. Also, a large number of
 %    parameters are set at the beginning of the file; these parameters should
 %    be capable of being set with an optional arguments to the function call.
 %------------------------------------------------------------------------------
-function [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate)
-    %%%%%%%%%% parameters to play with %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % parameters for program flow control
-    plotFig = false;
+function [spw, fShp, fRip] = DetectRipples(lfp, sampleRate, varargin)
+
+    % Parameter ideas:
+    % - lfpEnvelope (only use high/low if provided)
+    % - output (a filename so in-progress work is not lost)
+    % - freqRange (allowed frequencies for a ripple)
+    % - durationRange (how long can a ripple be)
+    % - minSeparation (how close can ripples be to each other)
+    % - filterWidth (width of smoothing filter in milliseconds; single-sided?)
+    % - thresholds?
+    % Parameters to exclude:
+    % - downsampleRate (just do this before calling the function)
+    %
+    filterWidth = 10;
 
     highband = 200; % bandpass filter range (180Hz to 90Hz)
     lowband = 90; %
@@ -56,59 +75,63 @@ function [spw, fShp, fRip] = ripdetect_sev(dat, sampleRate)
                             % this value on top of being supra-thresholdf.
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % detection
 
-    dat = downsample(dat, downsampleRat);
+    % detection
+    lfp = downsample(lfp, downsampleRat);
 
     % Create a Gaussian filter for smoothing signals.
-    filter = gausswin(199);
+    filter = gausswin(filterWidth * sampleRate);
     filter = filter / sum(filter);
 
     % detect sharp waves based on SD-based threshold:
-    disp('Computing sharp-wave signal...');
-    fShp = computeSharpWave(dat(:, 3), dat(:, 1), filter);
+    fShp = computeSharpWave(lfp(:, 3), lfp(:, 1), filter);
 
     % detect ripple power
-    disp('Computing ripple-wave "power" signal...');
-    fRip = computeRipplePower(dat(:, 2), [lowband, highband], sampleRate, filter);
+    fRip = computeRipplePower(lfp(:, 2), [lowband, highband], sampleRate, filter);
 
     % get events with large sharpwave/ripple content
     aboveThr = (fShp > shpThresh_multipSD) & (fRip > ripThresh_multipSD);
-    [evUp evDown] = SchmittTriggerUpDownMarked(aboveThr, 0.5, 0.5);
+    [aboveStdevCrossing, ~] = SchmittTriggerUpDownMarked(aboveThr, 0.5, 0.5);
+
+    [upCrossings, downCrossings] = SchmittTriggerUpDownMarked(fShp, 1.5, 1.5);
 
     % get features for each ripple/shpw event
     nRip = 0;
 
     spw=[];
     spw.endT = 0;
-    figOffset = round(sampleRate/4);
     detOffset = round(sampleRate/6);
 
     disp('Detecting ripples.....');
-    for nEvnt = 1 : length(evUp)-1
-        t1 = evUp(nEvnt);
-        t2 = t1 + max_sw_period;
-        if (t1-spw.endT) > min_isw_period
+    for crossingIndex = aboveStdevCrossing
+        t2 = crossingIndex + max_sw_period;
+
+        % A crossing time only indicates the start of a ripple if enough time has
+        % elapsed since the previous ripple.
+        if (crossingIndex - spw.endT) > min_isw_period
             nRip = nRip + 1;
-            [ripAmpl ripInd] = max(fShp(max(1,t1-detOffset):min(t2+detOffset,length(fShp))));
-            spw.peakT(nRip) = max(1,t1-detOffset)+ripInd;
 
-            % ZACH: I don't have this file.
-            c = SchmittTriggerUpDownMarked(fShp(1:spw.peakT(nRip)),1.5,1.5);
-            spw.startT(nRip) = c(end);
-            [cU cD] = SchmittTriggerUpDownMarked(fShp(spw.peakT(nRip):end),1.5,1.5);
-            spw.endT(nRip) = cD(1) + spw.peakT(nRip);
+            % Find the maximum of the sharp-wave signal between the crossing
+            % index and the last possible index (based on the maximum width
+            % of the ripple). This maximum value is the sharp-wave's peak
+            % amplitude, and the index of this maximum is the index of the
+            % peak of this ripple.
+            [ripAmpl ripInd] = max(fShp(crossingIndex : t2));
             spw.shpwPeakAmplSD(nRip) = ripAmpl;
-            spw.ripPeakAmplSD(nRip) = max(fRip(spw.startT(nRip):spw.endT(nRip)));
+            spw.peakT(nRip) = ripInd;
 
-            % if starting at least min_isw_period after the previous ripple event
-            if plotFig
-                range = (t1 - figOffset : t2 + figOffset);
-                timeData = range / (sampleRate / 1000);
-                event = [spw.startT(nRip), spw.peakT(nRip), spw.endT(nRip)];
-                event = (event - range(1)) / (sampleRate / 1000);
-                plotRipple(timeData, dat(range, :), fShp(range), fRip(range), event);
-            end
+            % Find the last place between the start of the sharp-wave signal
+            % and the peak of this ripple that the signal goes above 1.5.
+            % This is the start of the ripple.
+            % Why 1.5?
+            spw.startT(nRip) = find(upCrossings < spw.peakT(nRip), 1, 'last');
+
+            % Find the first down crossing between the peak of the ripple and
+            % the end of the signal. This is the end of this ripple.
+            spw.endT(nRip) = find(downCrossings > spw.peakT(nRip), 1, 'first');
+
+            % Find the ripple's peak amplitude.
+            spw.ripPeakAmplSD(nRip) = max(fRip(spw.startT(nRip) : spw.endT(nRip)));
         end
     end
 end
