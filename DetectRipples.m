@@ -43,7 +43,7 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
     sampleRate = 2e4;
     smoothingRadius = 0.011; % Smooth over 2 maximum periods of the ripple frequency.
     rippleFreqRange = [90, 180];
-    duration = [0.025, 0.250];
+    duration = [0.025, 0.200];
     minSeparation = 0.030;
 
     % threshold SD (standard deviation) for ripple detection
