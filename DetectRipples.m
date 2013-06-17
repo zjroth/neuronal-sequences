@@ -135,28 +135,44 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
         end
 
         % Do some correcting in case the detected ripple is too long.
-        if (currRippleEnd - currRippleStart > maxDuration)
-            % At least one end point of the ripple has to be more than
-            % half of the maximum allowed period.
-            headLength = currRipplePeak - currRippleStart;
-            tailLength = currRippleEnd - currRipplePeak;
-
-            headTooLong = (headLength > maxDuration / 2);
-            tailTooLong = (tailLength > maxDuration / 2);
-
-            if headTooLong && tailTooLong
-                currRippleStart = currRipplePeak - maxDuration / 2;
-                currRippleEnd = currRipplePeak + maxDuration / 2;
-            elseif headTooLong
-                currRippleStart = currRipplePeak - (maxDuration - tailLength);
-            elseif tailTooLong
-              currRippleEnd = currRipplePeak + (maxDuration - headLength);
-            end
-        end
+        [currRippleStart, currRipplePeak, currRippleEnd] = shortenRipple(...
+            currRippleStart, currRipplePeak, currRippleEnd);
 
         ripples(numRipples, :) = [currRippleStart, currRipplePeak, currRippleEnd];
     end
 
     % Convert the ripple times to seconds (from sample numbers).
     ripples = ripples(1 : numRipples, :);
+end
+
+function [newStart, newPeak, newEnd] = shortenRipple(...
+    rippleStart, ripplePeak, rippleEnd)
+
+    % Initialize the return variables.
+    newStart = rippleStart;
+    newPeak = ripplePeak;
+    newEnd = rippleEnd;
+
+    % Only do something if the ripple is too long.
+    if (newEnd - newStart > maxDuration)
+        % At least one end point of the ripple has to be more than
+        % half of the maximum allowed period.
+        headLength = newPeak - newStart;
+        tailLength = newEnd - newPeak;
+
+        % Variables to store whether the head and tail of the ripple (i.e., the
+        % parts before and after the peak) are too long.
+        headTooLong = (headLength > maxDuration / 2);
+        tailTooLong = (tailLength > maxDuration / 2);
+
+        % Now simply shorten the appropriate parts of the ripple.
+        if headTooLong && tailTooLong
+            newStart = newPeak - maxDuration / 2;
+            newEnd = newPeak + maxDuration / 2;
+        elseif headTooLong
+            newStart = newPeak - (maxDuration - tailLength);
+        elseif tailTooLong
+            newEnd = newPeak + (maxDuration - headLength);
+        end
+    end
 end
