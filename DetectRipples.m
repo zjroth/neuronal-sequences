@@ -53,10 +53,13 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
     % Parse the named parameter list in `varargin`.
     parseNamedParams();
 
-    % Now that the optional parameter values have been set...
+    % Now that the optional parameter values have been set, we can use them to
+    % deterine the values of certain variables to be used during the
+    % computation.
     minDuration = round(duration(1) * sampleRate);
     maxDuration = round(duration(2) * sampleRate);
     minSeparation = round(minSeparation * sampleRate);
+    minPeakSep = minDuration + minSeparation;
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -66,28 +69,41 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
     filter = gausswin(2 * smoothingRadius * sampleRate + 1);
     filter = filter / sum(filter);
 
-    % detect sharp waves based on SD-based threshold:
+    % Compute the "sharp-wave" signal that is depended on LFPs that polarize
+    % during the ripple.
     sharpWave = computeSharpWave(lfp(:, 3), lfp(:, 1), filter);
 
-    % detect ripple power
+    % Compute the "ripple-wave" signal that is determined by the LFP in which
+    % the high-frequency ripple events are occuring.
     rippleWave = computeRippleWave(lfp(:, 2), rippleFreqRange, sampleRate, filter);
 
-    % get events with large sharpwave/ripple content
+    % Now that we have the necessary signals, we can determine intervals in
+    % which the peak of a ripple might be occuring by thresholding the signals
+    % with the provided thresholds.
     aboveThr = (sharpWave > minSharpWavePeak) & (rippleWave > minRippleWavePeak);
-
     ripplePeakIntervals = getIntervals(aboveThr);
+
+    % In addition to the intervals in which ripple peaks may occur, we also need
+    % to determine (initial estimates for) intervals during which an entire
+    % ripple may be occuring.
     rippleIntervals = getIntervals(sharpWave >= 1.5);
 
-    % get features for each ripple/shpw event
+    % Now that we have the necessary intervals to consider, we want to classify
+    % those events as ripples or not ripples. Initialize the necessary variables
+    % here for storing the ripples and for keeping track of how many ripples we
+    % have found.
     ripples = NaN(size(ripplePeakIntervals, 1), 3);
     numRipples = 0;
 
     % Loop through the collection of intervals in which the peaks live to build
     % the list of ripples.
     for i = 1 : size(ripplePeakIntervals, 1)
+        % For convenience, store the current interval in which the peak exists.
         peakIntervalStart = ripplePeakIntervals(i, 1);
         peakIntervalEnd = ripplePeakIntervals(i, 2);
 
+        % We assume for now that the current peak interval is part of a new
+        % ripple, though we may determine otherwise later.
         numRipples = numRipples + 1;
 
         % Find the location of the peak of the current ripple, as determined by
@@ -105,19 +121,24 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
         % Correct for the case that this ripple is too close to the previous
         % ripple.
         if i > 1
-            minPeakSep = minDuration + minSeparation;
-
+            % For convenience, store the pieces of the previous ripple.
             prevStart = ripples(numRipples - 1, 1);
             prevPeak = ripples(numRipples - 1, 2);
             prevEnd = ripples(numRipples - 1, 3);
 
             % If the peaks are too close, join them into a single ripple.
             if currRipplePeak - prevPeak < minPeakSep
+                % Since we are joining ripples, there is one fewer ripple than
+                % we previously thought.
                 numRipples = numRipples - 1;
 
+                % The peak of the merged ripple is the higher of the peaks of
+                % the two ripples that are being joined.
                 if rippleWave(currRipplePeak) < rippleWave(prevPeak);
                     currRipplePeak = prevPeak;
                 end
+
+                % Give the ripple the maximum duration (for now).
                 currRippleStart = min(prevStart, currRippleStart);
                 currRippleEnd = max(prevEnd, currRippleEnd);
             elseif currRippleStart - prevEnd < minSeparation
@@ -127,6 +148,9 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
                 [~, splitPoint] = min(rippleWave(prevPeak : currRipplePeak));
                 splitPoint = splitPoint + prevPeak - 1;
 
+                % Ensure that the end of the previous ripple and the start of
+                % the current ripple are separated by the minimum inter-ripple
+                % period.
                 prevEnd = splitPoint - ceil(minSeparation / 2);
                 ripples(numRipples - 1, 3) = prevEnd;
 
@@ -134,14 +158,16 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
             end
         end
 
-        % Do some correcting in case the detected ripple is too long.
+        % Shorten this ripple if it is too long.
         [currRippleStart, currRipplePeak, currRippleEnd] = shortenRipple(...
             currRippleStart, currRipplePeak, currRippleEnd);
 
+        % Finally, store the ripple in the matrix of ripple data.
         ripples(numRipples, :) = [currRippleStart, currRipplePeak, currRippleEnd];
     end
 
-    % Convert the ripple times to seconds (from sample numbers).
+    % Ensure that the matrix of returned ripple data contains only the rows for
+    % which we actually found a ripple.
     ripples = ripples(1 : numRipples, :);
 end
 
