@@ -1,7 +1,7 @@
 %------------------------------------------------------------------------------
 % USAGE:
 %
-%    [spw, dat, fShp, fRip] = DetectRipples(lfp, sampleRate, ...)
+%    [ripples, sharpWave, rippleWave] = DetectRipples(lfp, sampleRate, ...)
 %
 % DESCRIPTION:
 %
@@ -16,10 +16,8 @@
 %
 % RETURNS:
 %
-%    spw
-%       .
-%    dat
-%       .
+%    ripples
+%       Matrix with rows of the form [startTime, peakTime, endTime]
 %    fShp
 %       .
 %    fRip
@@ -33,105 +31,132 @@
 %    parameters are set at the beginning of the file; these parameters should
 %    be capable of being set with an optional arguments to the function call.
 %------------------------------------------------------------------------------
-function [spw, fShp, fRip] = DetectRipples(lfp, sampleRate, varargin)
-
-    % Parameter ideas:
-    % - lfpEnvelope (only use high/low if provided)
-    % - output (a filename so in-progress work is not lost)
-    % - freqRange (allowed frequencies for a ripple)
-    % - durationRange (how long can a ripple be)
-    % - minSeparation (how close can ripples be to each other)
-    % - filterWidth (width of smoothing filter in milliseconds; single-sided?)
+function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
+    % Optional parameter ideas:
+    % - lfpEnvelope     (only use high/low if provided)
+    % - outputFile      (a filename so in-progress work is not lost)
+    % - rippleFreqRange (allowed frequencies for a ripple)
+    % - duration        (how long can a ripple last)
+    % - minSeparation   (how close can ripples be to each other)
+    % - smoothingRadius (width of smoothing filter in milliseconds; single-sided?)
     % - thresholds?
-    % Parameters to exclude:
-    % - downsampleRate (just do this before calling the function)
-    %
-    filterWidth = 10;
-
-    highband = 200; % bandpass filter range (180Hz to 90Hz)
-    lowband = 90; %
-    downsampleRat = 1;
-    sampleRate = sampleRate/downsampleRat;
-
-    % These have been moved to `computeRipplePower` for now.
-    %   filtOrder = 500;  % filter order has to be even; .. the longer the more
-    %                     % selective, but the operation will be linearly slower
-    %                     % to the filter order
-    %   filtOrder = ceil(filtOrder/2)*2;           %make sure filter order is even
-    %   avgFiltOrder = 501; % do not change this... length of averaging filter
-
-    % This was not being used in Eva's original code.
-    %   avgFiltDelay = floor(avgFiltOrder/2);  % compensated delay period
-
-    % parameters for ripple period (ms)
-    min_sw_period = round(0.025*sampleRate/downsampleRat) ; % minimum sharpwave period = 50ms ~ 6 cycles
-    max_sw_period = round(0.250*sampleRate/downsampleRat); % maximum sharpwave period = 250ms ~ 30 cycles
-                                                           % of ripples (max, not used now)
-    min_isw_period = round(0.030*sampleRate/downsampleRat); % minimum inter-sharpwave period;
+    sampleRate = 2e4;
+    smoothingRadius = 0.011; % Smooth over 2 maximum periods of the ripple frequency.
+    rippleFreqRange = [90, 180];
+    duration = [0.025, 0.250];
+    minSeparation = 0.030;
 
     % threshold SD (standard deviation) for ripple detection
-    shpThresh_multipSD = 5;     % threshold for ripple detection
-    ripThresh_multipSD = 4; % the peak of the detected region must satisfy
-                            % this value on top of being supra-thresholdf.
+    minSharpWavePeak = 5;
+    minRippleWavePeak = 4;
+
+    % Parse the named parameter list in `varargin`.
+    parseNamedParams();
+
+    % Now that the optional parameter values have been set...
+    minDuration = round(duration(1) * sampleRate);
+    maxDuration = round(duration(2) * sampleRate);
+    minSeparation = round(minSeparation * sampleRate);
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     % detection
-    lfp = downsample(lfp, downsampleRat);
 
     % Create a Gaussian filter for smoothing signals.
-    filter = gausswin(filterWidth * sampleRate);
+    filter = gausswin(2 * smoothingRadius * sampleRate + 1);
     filter = filter / sum(filter);
 
     % detect sharp waves based on SD-based threshold:
-    fShp = computeSharpWave(lfp(:, 3), lfp(:, 1), filter);
+    sharpWave = computeSharpWave(lfp(:, 3), lfp(:, 1), filter);
 
     % detect ripple power
-    fRip = computeRipplePower(lfp(:, 2), [lowband, highband], sampleRate, filter);
+    rippleWave = computeRipplePower(lfp(:, 2), rippleFreqRange, sampleRate, filter);
 
     % get events with large sharpwave/ripple content
-    aboveThr = (fShp > shpThresh_multipSD) & (fRip > ripThresh_multipSD);
-    [aboveStdevCrossing, ~] = SchmittTriggerUpDownMarked(aboveThr, 0.5, 0.5);
+    aboveThr = (sharpWave > minSharpWavePeak) & (rippleWave > minRippleWavePeak);
 
-    [upCrossings, downCrossings] = SchmittTriggerUpDownMarked(fShp, 1.5, 1.5);
+    ripplePeakIntervals = getIntervals(aboveThr);
+    rippleIntervals = getIntervals(sharpWave >= 1.5);
 
     % get features for each ripple/shpw event
-    nRip = 0;
+    ripples = NaN(size(ripplePeakIntervals, 1), 3);
+    numRipples = 0;
 
-    spw=[];
-    spw.endT = 0;
-    detOffset = round(sampleRate/6);
+    % Loop through the collection of intervals in which the peaks live to build
+    % the list of ripples.
+    for i = 1 : size(ripplePeakIntervals, 1)
+        peakIntervalStart = ripplePeakIntervals(i, 1);
+        peakIntervalEnd = ripplePeakIntervals(i, 2);
 
-    disp('Detecting ripples.....');
-    for crossingIndex = aboveStdevCrossing
-        t2 = crossingIndex + max_sw_period;
+        numRipples = numRipples + 1;
 
-        % A crossing time only indicates the start of a ripple if enough time has
-        % elapsed since the previous ripple.
-        if (crossingIndex - spw.endT) > min_isw_period
-            nRip = nRip + 1;
+        % Find the location of the peak of the current ripple, as determined by
+        % the sharp-wave signal.
+        [~, currRipplePeak] = max(sharpWave(peakIntervalStart : peakIntervalEnd));
+        currRipplePeak = currRipplePeak + (peakIntervalStart - 1);
 
-            % Find the maximum of the sharp-wave signal between the crossing
-            % index and the last possible index (based on the maximum width
-            % of the ripple). This maximum value is the sharp-wave's peak
-            % amplitude, and the index of this maximum is the index of the
-            % peak of this ripple.
-            [ripAmpl ripInd] = max(fShp(crossingIndex : t2));
-            spw.shpwPeakAmplSD(nRip) = ripAmpl;
-            spw.peakT(nRip) = ripInd;
+        % Initially, we set the ripple to be the entire width of the
+        % above-determined ripple interval in which the ripple peak lies. Find
+        % that interval, and set the corresponding start and end times.
+        currRippleInterval = find(rippleIntervals(:, 1) < currRipplePeak, 1, 'last');
+        currRippleStart = rippleIntervals(currRippleInterval, 1);
+        currRippleEnd = rippleIntervals(currRippleInterval, 2);
 
-            % Find the last place between the start of the sharp-wave signal
-            % and the peak of this ripple that the signal goes above 1.5.
-            % This is the start of the ripple.
-            % Why 1.5?
-            spw.startT(nRip) = find(upCrossings < spw.peakT(nRip), 1, 'last');
+        % Correct for the case that this ripple is too close to the previous
+        % ripple.
+        if i > 1
+            minPeakSep = minDuration + minSeparation;
 
-            % Find the first down crossing between the peak of the ripple and
-            % the end of the signal. This is the end of this ripple.
-            spw.endT(nRip) = find(downCrossings > spw.peakT(nRip), 1, 'first');
+            prevStart = ripples(numRipples - 1, 1);
+            prevPeak = ripples(numRipples - 1, 2);
+            prevEnd = ripples(numRipples - 1, 3);
 
-            % Find the ripple's peak amplitude.
-            spw.ripPeakAmplSD(nRip) = max(fRip(spw.startT(nRip) : spw.endT(nRip)));
+            % If the peaks are too close, join them into a single ripple.
+            if currRipplePeak - prevPeak < minPeakSep
+                numRipples = numRipples - 1;
+
+                if rippleWave(currRipplePeak) < rippleWave(prevPeak);
+                    currRipplePeak = prevPeak;
+                end
+                currRippleStart = min(prevStart, currRippleStart);
+                currRippleEnd = max(prevEnd, currRippleEnd);
+            elseif currRippleStart - prevEnd < minSeparation
+                % If the peaks are separated by enough distance and the ends of
+                % the ripples are too close together, choose an appropriate
+                % point between the peaks to split the ripples at.
+                [~, splitPoint] = min(rippleWave(prevPeak : currRipplePeak));
+                splitPoint = splitPoint + prevPeak - 1;
+
+                prevEnd = splitPoint - ceil(minSeparation / 2);
+                ripples(numRipples - 1, 3) = prevEnd;
+
+                currRippleStart = splitPoint + ceil(minSeparation / 2);
+            end
         end
+
+        % Do some correcting in case the detected ripple is too long.
+        if (currRippleEnd - currRippleStart > maxDuration)
+            % At least one end point of the ripple has to be more than
+            % half of the maximum allowed period.
+            headLength = currRipplePeak - currRippleStart;
+            tailLength = currRippleEnd - currRipplePeak;
+
+            headTooLong = (headLength > maxDuration / 2);
+            tailTooLong = (tailLength > maxDuration / 2);
+
+            if headTooLong && tailTooLong
+                currRippleStart = currRipplePeak - maxDuration / 2;
+                currRippleEnd = currRipplePeak + maxDuration / 2;
+            elseif headTooLong
+                currRippleStart = currRipplePeak - (maxDuration - tailLength);
+            elseif tailTooLong
+              currRippleEnd = currRipplePeak + (maxDuration - headLength);
+            end
+        end
+
+        ripples(numRipples, :) = [currRippleStart, currRipplePeak, currRippleEnd];
     end
+
+    % Convert the ripple times to seconds (from sample numbers).
+    ripples = ripples(1 : numRipples, :);
 end
