@@ -70,7 +70,7 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
     sharpWave = computeSharpWave(lfp(:, 3), lfp(:, 1), filter);
 
     % detect ripple power
-    rippleWave = computeRipplePower(lfp(:, 2), rippleFreqRange, sampleRate, filter);
+    rippleWave = computeRippleWave(lfp(:, 2), rippleFreqRange, sampleRate, filter);
 
     % get events with large sharpwave/ripple content
     aboveThr = (sharpWave > minSharpWavePeak) & (rippleWave > minRippleWavePeak);

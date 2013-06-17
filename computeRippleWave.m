@@ -1,6 +1,6 @@
 %------------------------------------------------------------------------------
 % Usage:
-%    rplPower = computeRipplePower()
+%    rplPower = computeRippleWave()
 % Description:
 %    Here is Eva's original comment for this code: "detect ripple power".
 % Arguments:
@@ -12,7 +12,7 @@
 %    rplPower
 %       .
 %------------------------------------------------------------------------------
-function rplPower = computeRipplePower(lfp, passBand, sampleRate, smoothingFilter)
+function rplPower = computeRippleWave(lfp, passBand, sampleRate, smoothingFilter)
     % The frequency ranges (in Hertz) for theta waves and ripple waves.
     rplFreqRange = passBand;
     % thetaFreqRange = [6, 10];
