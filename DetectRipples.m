@@ -47,8 +47,15 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
     minSeparation = 0.030;
 
     % threshold SD (standard deviation) for ripple detection
-    minSharpWavePeak = 5;
-    minRippleWavePeak = 4;
+    minSharpWavePeak = 4;
+    minSharpWave = 1.5;
+    minRippleWavePeak = 2;
+    minRippleWave = 1;
+    maxThetaDuringRipple = 1;
+
+    sharpWave = [];
+    rippleWave = [];
+    thetaWave = zeros(size(lfp, 1), 1);
 
     % Parse the named parameter list in `varargin`.
     parseNamedParams();
@@ -71,22 +78,31 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
 
     % Compute the "sharp-wave" signal that is depended on LFPs that polarize
     % during the ripple.
-    sharpWave = computeSharpWave(lfp(:, 3), lfp(:, 1), filter);
+    if isempty(sharpWave)
+        sharpWave = computeSharpWave(lfp(:, 3), lfp(:, 1), filter);
+    end
 
     % Compute the "ripple-wave" signal that is determined by the LFP in which
     % the high-frequency ripple events are occuring.
-    rippleWave = computeRippleWave(lfp(:, 2), rippleFreqRange, sampleRate, filter);
+    if isempty(rippleWave)
+        rippleWave = computeRippleWave(lfp(:, 2), rippleFreqRange, sampleRate, filter);
+    end
 
     % Now that we have the necessary signals, we can determine intervals in
     % which the peak of a ripple might be occuring by thresholding the signals
     % with the provided thresholds.
-    aboveThr = (sharpWave > minSharpWavePeak) & (rippleWave > minRippleWavePeak);
-    ripplePeakIntervals = getIntervals(aboveThr);
+    ripplePeakIntervals = getIntervals(    ...
+        (sharpWave > minSharpWavePeak) &   ...
+        (rippleWave > minRippleWavePeak) & ...
+        (thetaWave < maxThetaDuringRipple));
 
     % In addition to the intervals in which ripple peaks may occur, we also need
     % to determine (initial estimates for) intervals during which an entire
     % ripple may be occuring.
-    rippleIntervals = getIntervals(sharpWave >= 1.5);
+    rippleIntervals = getIntervals(     ...
+        (sharpWave >= minSharpWave) &   ...
+        (rippleWave >= minRippleWave) & ...
+        (thetaWave < maxThetaDuringRipple));
 
     % Now that we have the necessary intervals to consider, we want to classify
     % those events as ripples or not ripples. Initialize the necessary variables
@@ -160,7 +176,12 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
 
         % Shorten this ripple if it is too long.
         [currRippleStart, currRipplePeak, currRippleEnd] = shortenRipple(...
-            currRippleStart, currRipplePeak, currRippleEnd);
+            currRippleStart, currRipplePeak, currRippleEnd, maxDuration);
+
+        % Correct for the case that the peak of the ripple no longer lives
+        % inside the boundaries of the ripple.
+%         [~, currRipplePeak] = max(sharpWave(currRippleStart : currRippleEnd));
+%         currRipplePeak = currRipplePeak + (currRippleStart - 1);
 
         % Finally, store the ripple in the matrix of ripple data.
         ripples(numRipples, :) = [currRippleStart, currRipplePeak, currRippleEnd];
@@ -172,7 +193,7 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
 end
 
 function [newStart, newPeak, newEnd] = shortenRipple(...
-    rippleStart, ripplePeak, rippleEnd)
+    rippleStart, ripplePeak, rippleEnd, maxDuration)
 
     % Initialize the return variables.
     newStart = rippleStart;
