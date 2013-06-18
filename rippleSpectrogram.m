@@ -12,7 +12,7 @@
 %    rplPower
 %       .
 %------------------------------------------------------------------------------
-function rplPower = computeRippleWave(lfp, passBand, sampleRate, smoothingFilter)
+function rplPower = rippleSpectrogram(lfp, passBand, sampleRate, smoothingFilter)
     % The frequency ranges (in Hertz) for theta waves and ripple waves.
     rplFreqRange = passBand;
 
