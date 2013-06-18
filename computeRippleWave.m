@@ -15,11 +15,9 @@
 function rplPower = computeRippleWave(lfp, passBand, sampleRate, smoothingFilter)
     % The frequency ranges (in Hertz) for theta waves and ripple waves.
     rplFreqRange = passBand;
-    % thetaFreqRange = [6, 10];
 
     %
     rplTimeWindow = 0.25;
-    % thetaWindow = 0.5;
 
     % Compute the actual short-time Fourier transforms for the desired
     % frequencies.
@@ -31,26 +29,11 @@ function rplPower = computeRippleWave(lfp, passBand, sampleRate, smoothingFilter
         'range'     , rplFreqRange                  ...
     );
 
-    % [thetaSpect, thetaTimes, thetaFreqs] = MTSpectrogram( ...
-    %     lfp         ,                                     ...
-    %     'frequency' , sampleRate,                         ...
-    %     'window'    , thetaTimeWindow,                    ...
-    %     'step'      , (1 / sampleRate),                   ...
-    %     'range'     , thetaFreqRange                      ...
-    % );
-
     % We want to account for the fact that "the power spectrum of intracortical
     % local field potential (LFP) often scales as 1/f^2". Note that this fact
     % seems not to hold for frequencies below about 10 Hz, which means that
     % we should probably be using a different method for the theta spectrogram.
     rplSpect = scaleLfpSpectrogram(rplSpect, rplFreqs);
-    % scaledThetaSpect = scaleLfpSpectrogram(thetaSpect, thetaFreqs);
-
-    % To account for some artifacts due to computing a spectrogram, we want
-    % to smooth across frequencies in the spectrograms.
-    %smoothingFilter = gausswin(20);
-    %smoothingFilter = smoothingFilter / sum(smoothingFilter);
-    rplSpect = conv2(rplSpect, smoothingFilter, 'same');
 
     % We want to combine the transforms for each window. For now, we will take
     % the maximum value found for each frequency range (at a given time).
