@@ -1,7 +1,6 @@
-%------------------------------------------------------------------------------
 % USAGE:
 %
-%    [ripples, sharpWave, rippleWave] = DetectRipples(lfp, sampleRate, ...)
+%    [ripples, sharpWave, rippleWave] = DetectRipples(lfp, ...)
 %
 % DESCRIPTION:
 %
@@ -30,8 +29,11 @@
 %    `totNch` can be read in from a metadata file. Also, a large number of
 %    parameters are set at the beginning of the file; these parameters should
 %    be capable of being set with an optional arguments to the function call.
-%------------------------------------------------------------------------------
 function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
+    %=======================================================================
+    % Default optional parameter values
+    %=======================================================================
+
     % Optional parameter ideas:
     % - lfpEnvelope     (only use high/low if provided)
     % - outputFile      (a filename so in-progress work is not lost)
@@ -57,6 +59,10 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
     rippleWave = [];
     thetaWave = zeros(size(lfp, 1), 1);
 
+    %=======================================================================
+    % Initialization and value-checking
+    %=======================================================================
+
     % Parse the named parameter list in `varargin`.
     parseNamedParams();
 
@@ -68,9 +74,9 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
     minSeparation = round(minSeparation * sampleRate);
     minPeakSep = minDuration + minSeparation;
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    % detection
+    %=======================================================================
+    % Actual computations
+    %=======================================================================
 
     % Create a Gaussian filter for smoothing signals.
     filter = gausswin(2 * smoothingRadius * sampleRate + 1);
@@ -112,7 +118,10 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
     numRipples = 0;
 
     % Loop through the collection of intervals in which the peaks live to build
-    % the list of ripples.
+    % the list of ripples. We proceed by saying that one ripple exists for each
+    % "peak interval" but that the body of the ripple is determined by the
+    % "ripple interval" that contains the given peak interval. As such, some
+    % post-processing is required to ensure that ripples do not overlap.
     for i = 1 : size(ripplePeakIntervals, 1)
         % For convenience, store the current interval in which the peak exists.
         peakIntervalStart = ripplePeakIntervals(i, 1);
