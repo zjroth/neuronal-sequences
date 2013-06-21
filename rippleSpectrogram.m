@@ -24,9 +24,9 @@
 %       The frequencies (in Hertz) for which the spectrogram contains data
 %------------------------------------------------------------------------------
 function [spect, times, frequencies] = rippleSpectrogram(lfp, varargin)
-    % ======================================================================
+    %=======================================================================
     % Default optional parameter values
-    % ======================================================================
+    %=======================================================================
 
     % All times are in seconds, and all frequencies are in Hertz.
     sampleRate = 2e4;
@@ -38,9 +38,9 @@ function [spect, times, frequencies] = rippleSpectrogram(lfp, varargin)
     % the function.
     parseNamedParams();
 
-    % ======================================================================
+    %=======================================================================
     % Actual computations
-    % ======================================================================
+    %=======================================================================
 
     % Compute the actual short-time Fourier transforms for the desired
     % frequencies.

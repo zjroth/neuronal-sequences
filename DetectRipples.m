@@ -43,8 +43,8 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
     % - smoothingRadius (width of smoothing filter in milliseconds; single-sided?)
     % - thresholds?
     sampleRate = 2e4;
-    smoothingRadius = 0.011; % Smooth over 2 maximum periods of the ripple frequency.
-    rippleFreqRange = [90, 180];
+%    smoothingRadius = 0.011; % Smooth over 2 maximum periods of the ripple frequency.
+%    rippleFreqRange = [90, 180];
     duration = [0.025, 0.200];
     minSeparation = 0.030;
 
@@ -66,9 +66,41 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
     % Parse the named parameter list in `varargin`.
     parseNamedParams();
 
+    % Create a Gaussian filter for smoothing signals.
+%    filter = gausswin(2 * smoothingRadius * sampleRate + 1);
+%    filter = filter / sum(filter);
+
+    % Compute the "sharp-wave" signal that is depended on LFPs that polarize
+    % during the ripple.
+    if isempty(sharpWave)
+%        sharpWave = computeSharpWave(lfp(:, 3), lfp(:, 1), filter);
+    end
+
+    % Compute the "ripple-wave" signal that is determined by the LFP in which
+    % the high-frequency ripple events are occuring.
+    if isempty(rippleWave)
+%        rippleWave = computeRippleWave(lfp(:, 2), rippleFreqRange, sampleRate, filter);
+    end
+
+    % Ensure that the time data for the different signals is in agreement.
+    assert(strcmp(lfp.TimeInfo.Units, sharpWave.TimeInfo.Units));
+    assert(strcmp(lfp.TimeInfo.Units, rippleWave.TimeInfo.Units));
+    %assert(isequal(lfp.Time, sharpWave.Time));
+    %assert(all(ismember(rippleWave.Time, lfp.Time)));
+
+    [lfp, sharpWave, rippleWave, thetaWave, sharpWaveDiff] = ...
+        synctimes(lfp, sharpWave, rippleWave, thetaWave, sharpWaveDiff);
+
+    %if ~isequal(lfp.Time, rippleWave.Time)
+    %    lfp = resample(lfp, rippleWave.Time);
+    %    sharpWave = resample(sharpWave, rippleWave.Time);
+    %    thetaWave = resample(thetaWave, rippleWave.Time);
+    %end
+
     % Now that the optional parameter values have been set, we can use them to
     % deterine the values of certain variables to be used during the
     % computation.
+    sampleRate = 1 / mean(diff(lfp.Time));
     minDuration = round(duration(1) * sampleRate);
     maxDuration = round(duration(2) * sampleRate);
     minSeparation = round(minSeparation * sampleRate);
@@ -78,37 +110,23 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
     % Actual computations
     %=======================================================================
 
-    % Create a Gaussian filter for smoothing signals.
-    filter = gausswin(2 * smoothingRadius * sampleRate + 1);
-    filter = filter / sum(filter);
-
-    % Compute the "sharp-wave" signal that is depended on LFPs that polarize
-    % during the ripple.
-    if isempty(sharpWave)
-        sharpWave = computeSharpWave(lfp(:, 3), lfp(:, 1), filter);
-    end
-
-    % Compute the "ripple-wave" signal that is determined by the LFP in which
-    % the high-frequency ripple events are occuring.
-    if isempty(rippleWave)
-        rippleWave = computeRippleWave(lfp(:, 2), rippleFreqRange, sampleRate, filter);
-    end
-
     % Now that we have the necessary signals, we can determine intervals in
     % which the peak of a ripple might be occuring by thresholding the signals
     % with the provided thresholds.
     ripplePeakIntervals = getIntervals(    ...
-        (sharpWave > minSharpWavePeak) &   ...
-        (rippleWave > minRippleWavePeak) & ...
-        (thetaWave < maxThetaDuringRipple));
+        (sharpWave.Data > minSharpWavePeak) &   ...
+        (rippleWave.Data > minRippleWavePeak) & ...
+        (thetaWave.Data < maxThetaDuringRipple));
 
     % In addition to the intervals in which ripple peaks may occur, we also need
     % to determine (initial estimates for) intervals during which an entire
     % ripple may be occuring.
     rippleIntervals = getIntervals(     ...
-        (sharpWave >= minSharpWave) &   ...
-        (rippleWave >= minRippleWave) & ...
-        (thetaWave < maxThetaDuringRipple));
+        (sharpWave.Data >= minSharpWave) &   ...
+        (rippleWave.Data >= minRippleWave) & ...
+        (thetaWave.Data < maxThetaDuringRipple));
+
+    sharpWaveDiffAboveThresh = (sharpWaveDiff.Data > minSharpWaveDiff);
 
     % Now that we have the necessary intervals to consider, we want to classify
     % those events as ripples or not ripples. Initialize the necessary variables
@@ -133,7 +151,7 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
 
         % Find the location of the peak of the current ripple, as determined by
         % the sharp-wave signal.
-        [~, currRipplePeak] = max(sharpWave(peakIntervalStart : peakIntervalEnd));
+        [~, currRipplePeak] = max(sharpWave.Data(peakIntervalStart : peakIntervalEnd));
         currRipplePeak = currRipplePeak + (peakIntervalStart - 1);
 
         % Initially, we set the ripple to be the entire width of the
@@ -143,78 +161,122 @@ function [ripples, sharpWave, rippleWave] = DetectRipples(lfp, varargin)
         currRippleStart = rippleIntervals(currRippleInterval, 1);
         currRippleEnd = rippleIntervals(currRippleInterval, 2);
 
-        % Correct for the case that this ripple is too close to the previous
-        % ripple.
-        if i > 1
-            % For convenience, store the pieces of the previous ripple.
-            prevStart = ripples(numRipples - 1, 1);
-            prevPeak = ripples(numRipples - 1, 2);
-            prevEnd = ripples(numRipples - 1, 3);
+%        % Correct for the case that this ripple is too close to the previous
+%        % ripple.
+%        if i > 1
+%            % For convenience, store the pieces of the previous ripple.
+%            prevStart = ripples(numRipples - 1, 1);
+%            prevPeak = ripples(numRipples - 1, 2);
+%            prevEnd = ripples(numRipples - 1, 3);
+%
+%            % If the peaks are too close, join them into a single ripple.
+%            if currRipplePeak - prevPeak < minPeakSep
+%                % Since we are joining ripples, there is one fewer ripple than
+%                % we previously thought.
+%                numRipples = numRipples - 1;
+%
+%                % The peak of the merged ripple is the higher of the peaks of
+%                % the two ripples that are being joined.
+%                if sharpWave.Data(currRipplePeak) < sharpWave.Data(prevPeak);
+%                    currRipplePeak = prevPeak;
+%                end
+%
+%                % Give the ripple the maximum duration (for now).
+%                currRippleStart = min(prevStart, currRippleStart);
+%                currRippleEnd = max(prevEnd, currRippleEnd);
+%            elseif currRippleStart - prevEnd < minSeparation
+%                % If the peaks are separated by enough distance and the ends of
+%                % the ripples are too close together, choose an appropriate
+%                % point between the peaks to split the ripples at.
+%                [~, splitPoint] = min(sharpWave.Data(prevPeak : currRipplePeak));
+%                splitPoint = splitPoint + prevPeak - 1;
+%
+%                % Ensure that the end of the previous ripple and the start of
+%                % the current ripple are separated by the minimum inter-ripple
+%                % period.
+%                prevEnd = splitPoint - ceil(minSeparation / 2);
+%                ripples(numRipples - 1, 3) = prevEnd;
+%
+%                currRippleStart = splitPoint + ceil(minSeparation / 2);
+%            end
+%        end
 
-            % If the peaks are too close, join them into a single ripple.
-            if currRipplePeak - prevPeak < minPeakSep
-                % Since we are joining ripples, there is one fewer ripple than
-                % we previously thought.
+%        % Shorten this ripple if it is too long.
+%        [currRippleStart, currRippleEnd] = shortenRipple(...
+%            currRippleStart, currRipplePeak, currRippleEnd, maxDuration);
+
+        if currRippleEnd - currRippleStart > 0
+            % Correct for the case that the peak of the ripple no longer lives
+            % inside the boundaries of the ripple.
+           currRipplePeak = getPeak(sharpWave.Data, currRippleStart, currRippleEnd);
+
+            % Require that this ripple contain a <blah, blah, blah>.
+            if any(sharpWaveDiffAboveThresh(currRippleStart : currRippleEnd))
+                % Finally, store the ripple in the matrix of ripple data.
+                ripples(numRipples, :) = [currRippleStart, currRipplePeak, currRippleEnd];
+            else
                 numRipples = numRipples - 1;
-
-                % The peak of the merged ripple is the higher of the peaks of
-                % the two ripples that are being joined.
-                if rippleWave(currRipplePeak) < rippleWave(prevPeak);
-                    currRipplePeak = prevPeak;
-                end
-
-                % Give the ripple the maximum duration (for now).
-                currRippleStart = min(prevStart, currRippleStart);
-                currRippleEnd = max(prevEnd, currRippleEnd);
-            elseif currRippleStart - prevEnd < minSeparation
-                % If the peaks are separated by enough distance and the ends of
-                % the ripples are too close together, choose an appropriate
-                % point between the peaks to split the ripples at.
-                [~, splitPoint] = min(rippleWave(prevPeak : currRipplePeak));
-                splitPoint = splitPoint + prevPeak - 1;
-
-                % Ensure that the end of the previous ripple and the start of
-                % the current ripple are separated by the minimum inter-ripple
-                % period.
-                prevEnd = splitPoint - ceil(minSeparation / 2);
-                ripples(numRipples - 1, 3) = prevEnd;
-
-                currRippleStart = splitPoint + ceil(minSeparation / 2);
             end
+        else
+            numRipples = numRipples - 1;
         end
-
-        % Shorten this ripple if it is too long.
-        [currRippleStart, currRipplePeak, currRippleEnd] = shortenRipple(...
-            currRippleStart, currRipplePeak, currRippleEnd, maxDuration);
-
-        % Correct for the case that the peak of the ripple no longer lives
-        % inside the boundaries of the ripple.
-%         [~, currRipplePeak] = max(sharpWave(currRippleStart : currRippleEnd));
-%         currRipplePeak = currRipplePeak + (currRippleStart - 1);
-
-        % Finally, store the ripple in the matrix of ripple data.
-        ripples(numRipples, :) = [currRippleStart, currRipplePeak, currRippleEnd];
     end
 
     % Ensure that the matrix of returned ripple data contains only the rows for
-    % which we actually found a ripple.
-    ripples = ripples(1 : numRipples, :);
+    % which we actually found a ripple, remove any duplicates.
+    uniqueRipples = unique(ripples(1 : numRipples, :), 'rows');
+    numRipples = size(uniqueRipples, 1);
+%    numRipples = 0;
+
+%     % Split the ripples.
+%     for i = 1 : size(uniqueRipples, 1)
+%         rippleStart = uniqueRipples(i, 1);
+%         rippleEnd = uniqueRipples(i, 3);
+%
+%         [maxVal, maxIdx] = max(sharpWaveDiff2.Data(rippleStart : rippleEnd));
+%         splitIndex = rippleStart + maxIdx - 1;
+%
+%         if maxVal < minSplitPoint
+%             disp('Not splitting anything...');
+%             numRipples = numRipples + 1;
+%             ripples(numRipples, :) = uniqueRipples(i, :);
+%         else
+%             numRipples = numRipples + 2;
+%             disp(['Splitting into ripples ' num2str(numRipples - 1) ' and ' num2str(numRipples)]);
+%
+%             ripples(numRipples - 1, 1) = rippleStart;
+%             ripples(numRipples - 1, 2) = getPeak(sharpWave.Data, rippleStart, splitIndex);
+%             ripples(numRipples - 1, 3) = splitIndex;
+%
+%             ripples(numRipples, 1) = splitIndex;
+%             ripples(numRipples, 2) = getPeak(sharpWave.Data, splitIndex, rippleEnd);
+%             ripples(numRipples, 3) = rippleEnd;
+%         end
+%     end
+
+    % Finally, convert from the ripples from index data to time data.
+    ripples = uniqueRipples;
+    ripples = lfp.Time(ripples(1 : numRipples, :));
 end
 
-function [newStart, newPeak, newEnd] = shortenRipple(...
+function peak = getPeak(data, startIndex, endIndex)
+    [~, peak] = max(data(startIndex : endIndex));
+    peak = peak + (startIndex - 1);
+end
+
+function [newStart, newEnd] = shortenRipple(...
     rippleStart, ripplePeak, rippleEnd, maxDuration)
 
     % Initialize the return variables.
     newStart = rippleStart;
-    newPeak = ripplePeak;
     newEnd = rippleEnd;
 
     % Only do something if the ripple is too long.
     if (newEnd - newStart > maxDuration)
         % At least one end point of the ripple has to be more than
         % half of the maximum allowed period.
-        headLength = newPeak - newStart;
-        tailLength = newEnd - newPeak;
+        headLength = ripplePeak - newStart;
+        tailLength = newEnd - ripplePeak;
 
         % Variables to store whether the head and tail of the ripple (i.e., the
         % parts before and after the peak) are too long.
@@ -223,12 +285,44 @@ function [newStart, newPeak, newEnd] = shortenRipple(...
 
         % Now simply shorten the appropriate parts of the ripple.
         if headTooLong && tailTooLong
-            newStart = newPeak - maxDuration / 2;
-            newEnd = newPeak + maxDuration / 2;
+            newStart = ripplePeak - maxDuration / 2;
+            newEnd = ripplePeak + maxDuration / 2;
         elseif headTooLong
-            newStart = newPeak - (maxDuration - tailLength);
+            newStart = ripplePeak - (maxDuration - tailLength);
         elseif tailTooLong
-            newEnd = newPeak + (maxDuration - headLength);
+            newEnd = ripplePeak + (maxDuration - headLength);
         end
     end
+end
+
+function varargout = synctimes(varargin)
+    idx = NaN;
+    shortest = Inf;
+
+    % Find the shortest timeseries
+    for i = 1 : nargin
+        if length(varargin{i}.Time) < shortest
+            idx = i;
+            shortest = length(varargin{i}.Time);
+        end
+    end
+
+    times = varargin{idx}.Time;
+
+    % Resample where necessary.
+    for i = 1 : nargin
+        if i ~= idx
+%            assert(all(ismember(times, varargin{i}.Time)));
+
+            % Because of the above assertion, we only need to resample if the
+            % current timeseries is longer than the shortest.
+            if shortest < length(varargin{i}.Time)
+                varargout{i} = resample(varargin{i}, times);
+            else
+                varargout{i} = varargin{i};
+            end
+        end
+    end
+
+    varargout{idx} = varargin{idx};
 end
