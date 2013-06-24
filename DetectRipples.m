@@ -94,11 +94,11 @@ function [ripples, sharpWave, rippleWave] = DetectRipples( ...
         (rippleWave >= minRippleWave));
 
     % Fill in the gaps. We will split ripples that are too long later.
-    rippleIntervals = fillGaps(rippleIntervals, minSeparation / 2);
+    %rippleIntervals = fillGaps(rippleIntervals, minSeparation / 2);
 
     % Only consider those intervals that are long enough.
     rippleIntervals = rippleIntervals( ...
-        rippleIntervals(:, 2) - rippleIntervals(:, 1) >= minDuration);
+        rippleIntervals(:, 2) - rippleIntervals(:, 1) >= minDuration, :);
 
     % In addition to requiring the sharp-wave to be above a certain
     % threshold, we will also require that it increases sharply during the
@@ -132,7 +132,7 @@ function [ripples, sharpWave, rippleWave] = DetectRipples( ...
             (highDerivatives >= intervalStart) & ...
             (highDerivatives <= intervalEnd));
 
-        if containsPeak & containsSharpChange
+        if containsPeak && containsSharpChange
             % A new ripple has been found.
             numRipples = numRipples + 1;
 
@@ -149,16 +149,18 @@ function [ripples, sharpWave, rippleWave] = DetectRipples( ...
     ripples = ripples(1 : numRipples, :);
 
     % Split the ripples.
-    [splitPointVals, splitPoints] = findpeaks(secondDerivative);
-    splitPoints = splitPoints(splitPointVals > minSplitPoint);
+    peaks = findpeaks(secondDerivative);
+    splitPoints = peaks.loc;
+    splitPointVals = secondDerivative(splitPoints);
+    splitPoints = splitPoints(splitPointVals > minSecondDerivative);
     ripples = splitRipples(ripples, sharpWave, splitPoints);
 
     % Shorten any ripples that are too long.
     ripples = shortenRipples(ripples, maxDuration);
 
-    % Correct adjacent ripples (that are too close).
-    ripples = correctAdjacent(ripples, minSeparation);
-
+%    % Correct adjacent ripples (that are too close).
+%    ripples = correctAdjacent(ripples, minSeparation);
+%
     % Finally, convert the ripples from index data to time data.
     ripples = ripples / sampleRate;
 end
@@ -175,8 +177,8 @@ function ripplesOut = splitRipples(ripplesIn, sharpWave, splitPoints)
 
         % The split points that are local to the current ripple.
         localSplitPoints = splitPoints( ...
-            splitPoints > ripplesStart & ...
-            splitPoints < ripplesEnd);
+            splitPoints > rippleStart & ...
+            splitPoints < rippleEnd);
 
         % The lists of starting and ending points of the found subripples.
         starts = [rippleStart; localSplitPoints];

@@ -40,6 +40,7 @@ function hndl = plotRipples(varargin)
         x_min = rippleStart - 0.1;
         x_max = rippleEnd + 0.1;
 
+        % Plot the main ripple events over the LFP-triple.
         h(1) = subplot(7, 1, 1);
         plot(subseries(lfpTriple, x_min, x_max));
 
@@ -52,50 +53,9 @@ function hndl = plotRipples(varargin)
         showRipple(rippleStart, ripplePeak, rippleEnd, [0.5, 0.5, 0.5]);
         title(title1);
         xlim([x_min, x_max]);
+        ylim([-2000, 2000]);
 
-        h(3) = subplot(7, 1, 3);
-        localSharpWave = subseries(sharpWave, x_min, x_max);
-        %tsarea(localSharpWave, minSharpWave);
-        plot(localSharpWave, 'm');
-%         ylim([0, minSharpWavePeak]);
-%         sharpDiff = [0; diff(localSharpWave.Data)];
-%         sharpDiffDiff = [0; diff(sharpDiff)];
-        hold('on');
-        plot(sharpWaveDiff, 'b');
-        hline(gca, minSharpWaveDiff, [0, 1, 0]);
-%         area(localSharpWave.Time, sharpDiff, 0.01);
-%         plot(localSharpWave.Time, sharpDiffDiff);
-%         hline(gca, 0, 'k');
-%         xlim([0, 0.02]);
-        hold('off');
-        hline(gca, minSharpWavePeak, [0, 0, 0]);
-        hline(gca, minSharpWave, [0, 0, 0]);
-        title('Sharp-Wave Signal');
-
-        h(4) = subplot(7, 1, 4);
-        localRippleSpect = subseries(rippleSpect, x_min, x_max);
-        PlotColorMap(localRippleSpect.Data', 'x', localRippleSpect.Time, 'y', rippleFreqs, 'bar', 'off');
-        title('Spectrogram in Ripple Frequency Range');
-
-        h(5) = subplot(7, 1, 5);
-        localRippleWave = subseries(rippleWave, x_min, x_max);
-        %tsarea(localRippleWave, minRippleWave);
-        plot(localRippleWave);
-        hline(gca, minRippleWavePeak, [1, 0, 0]);
-        hline(gca, minRippleWave, [1, 0, 0]);
-        title('Ripple-Wave Signal');
-
-        h(6) = subplot(7, 1, 6);
-        localThetaSpect = subseries(thetaSpect, x_min, x_max);
-        PlotColorMap(localThetaSpect.Data', 'x', localThetaSpect.Time, 'y', thetaFreqs, 'bar', 'off');
-        title('Spectrogram in Theta Frequency Range');
-
-        h(7) = subplot(7, 1, 7);
-        plot(subseries(thetaWave, x_min, x_max));
-        hline(gca, maxThetaWave, [1, 0, 0]);
-        title('Theta-Wave Signal');
-
-        %
+        % Plot the secondary ripple events over the LFP-triple.
         h(2) = subplot(7, 1, 2);
         plot(subseries(lfpTriple, x_min, x_max));
         title(title2);
@@ -106,6 +66,42 @@ function hndl = plotRipples(varargin)
             showRipple(ripples2(j, 1), ripples2(j, 2), ripples2(j, 3), [0.5, 0.5, 0.5]);
           end
         end
+
+        % Plot the sharp-wave signal with the corresponding thresholds.
+        h(3) = subplot(7, 1, 3);
+        localSharpWave = subseries(sharpWave, x_min, x_max);
+        plot(localSharpWave);
+        hline(gca, minSharpWavePeak, [1, 0, 0]);
+        hline(gca, minSharpWave, [1, 0, 0]);
+        title('Sharp-Wave Signal');
+
+        % Plot the sharp-wave first derivative signal with the corresponding threshold.
+        h(4) = subplot(7, 1, 4);
+        localFirstDerivative = subseries(firstDerivative, x_min, x_max);
+        plot(localFirstDerivative);
+        hline(gca, minFirstDerivative, [1, 0, 0]);
+        title('Sharp-Wave First Derivative');
+
+        % Plot the sharp-wave second derivative signal with the corresponding threshold.
+        h(5) = subplot(7, 1, 5);
+        localSecondDerivative = subseries(secondDerivative, x_min, x_max);
+        plot(localSecondDerivative);
+        hline(gca, minSecondDerivative, [1, 0, 0]);
+        title('Sharp-Wave Second Derivative');
+
+        % Plot the ripple-band spectrogram.
+        h(6) = subplot(7, 1, 6);
+        localRippleSpect = subseries(rippleSpect, x_min, x_max);
+        PlotColorMap(localRippleSpect.Data', 'x', localRippleSpect.Time, 'y', rippleFreqs);
+        title('Spectrogram in Ripple Frequency Range');
+
+        % Plot the ripple-wave signal with the corresponding thresholds.
+        h(7) = subplot(7, 1, 7);
+        localRippleWave = subseries(rippleWave, x_min, x_max);
+        plot(localRippleWave);
+        hline(gca, minRippleWavePeak, [1, 0, 0]);
+        hline(gca, minRippleWave, [1, 0, 0]);
+        title('Ripple-Wave Signal');
 
         linkaxes(h, 'x');
         linkprop([h(1), h(2)], 'YLim');
@@ -120,12 +116,12 @@ function showRipple(rippleStart, ripplePeak, rippleEnd, rippleColor, rippleOpaci
   y_min = ylims(1);
   y_max = ylims(2);
   hold('on');
+  vline(gca, ripplePeak, [1 0 0]);
   fill([rippleStart rippleStart rippleEnd rippleEnd], ...
        [y_min y_max y_max y_min], ...
        rippleColor, ...
        'FaceAlpha', rippleOpacity);
   hold('off');
-  vline(gca, ripplePeak, [0 0 0]);
 end
 
 function ts_new = subseries(ts, mn, mx)
