@@ -107,62 +107,63 @@ function [ripples, sharpWave, rippleWave] = DetectRipples( ...
     highDerivatives = find(firstDerivative > minFirstDerivative);
 
     % Now that we have the necessary intervals to consider, we want to classify
-    % those events as ripples or not ripples. Initialize the necessary variables
-    % here for storing the ripples and for keeping track of how many ripples we
-    % have found.
-    ripples = NaN(size(rippleIntervals, 1), 3);
-    numRipples = 0;
-
-    % Loop through the collection of "ripple intervals" to build the list of
-    % ripples. We proceed by saying that one ripple exists for each "ripple
-    % interval" in which a "peak interval" is contained.
-    for i = 1 : size(rippleIntervals, 1)
-        % The start and end of the ripple.
-        intervalStart = rippleIntervals(i, 1);
-        intervalEnd = rippleIntervals(i, 2);
-
-        % Before considering the current interval to be a ripple, it must
-        % pass some tests: it must contain a peak interval, and it must
-        % contain a...*cough*...sharp change in the sharp-wave.
-        containsPeak = any( ...
-            (ripplePeakIntervals(:, 1) >= intervalStart) & ...
-            (ripplePeakIntervals(:, 2) <= intervalEnd));
-
-        containsSharpChange = any(...
-            (highDerivatives >= intervalStart) & ...
-            (highDerivatives <= intervalEnd));
-
-        if containsPeak && containsSharpChange
-            % A new ripple has been found.
-            numRipples = numRipples + 1;
-
-            % Now, the current interval designates the start and end of the
-            % newly-found ripple. Also find the location of the peak of the
-            % newly-found ripple, as determined by the sharp-wave signal.
-            ripplePeak = getPeak(sharpWave, intervalStart, intervalEnd);
-
-            ripples(numRipples, :) = [intervalStart, ripplePeak, intervalEnd];
-        end
-    end
-
-    % Keep only those rows that we've actually classified as ripples.
-    ripples = ripples(1 : numRipples, :);
+    % those events as ripples or not ripples. Initially, we say that each ripple
+    % interval contains a ripple. Store each ripple as a triple, specifically in
+    % the form [start, peak, end].
+    ripplePeaks = arrayfun(@(s, e) getPeak(sharpWave, s, e), ...
+        rippleIntervals(:, 1), rippleIntervals(:, 2));
+    ripples = [rippleIntervals(:, 1), ripplePeaks, rippleIntervals(:, 2)];
 
     % Split the ripples.
-    peaks = findpeaks(secondDerivative);
-    splitPoints = peaks.loc;
+    secondDerivativePeaks = findpeaks(secondDerivative);
+    splitPoints = secondDerivativePeaks.loc;
     splitPointVals = secondDerivative(splitPoints);
     splitPoints = splitPoints(splitPointVals > minSecondDerivative);
     ripples = splitRipples(ripples, sharpWave, splitPoints);
+
+    % Keep only those ripples that have high enough peaks in the sharp-wave
+    % signal and in its first derivative.
+    ripples = ripplesWithPeaks(ripples, ripplePeakIntervals);
+    ripples = ripplesWithSharpChange(ripples, highDerivatives);
 
     % Shorten any ripples that are too long.
     ripples = shortenRipples(ripples, maxDuration);
 
 %    % Correct adjacent ripples (that are too close).
 %    ripples = correctAdjacent(ripples, minSeparation);
-%
+
     % Finally, convert the ripples from index data to time data.
     ripples = ripples / sampleRate;
+end
+
+function ripplesOut = ripplesWithPeaks(ripplesIn, peakIntervals)
+    containsPeak = false(size(ripplesIn, 1), 1);
+
+    for i = 1 : size(ripplesIn, 1)
+        rippleStart = ripplesIn(i, 1);
+        rippleEnd = ripplesIn(i, 3);
+
+        containsPeak(i) = any( ...
+            (peakIntervals(:, 1) >= rippleStart) & ...
+            (peakIntervals(:, 2) <= rippleEnd));
+    end
+
+    ripplesOut = ripplesIn(containsPeak, :);
+end
+
+function ripplesOut = ripplesWithSharpChange(ripplesIn, highDerivatives)
+    containsSharpChange = false(size(ripplesIn, 1), 1);
+
+    for i = 1 : size(ripplesIn, 1)
+        rippleStart = ripplesIn(i, 1);
+        rippleEnd = ripplesIn(i, 3);
+
+        containsSharpChange(i) = any(...
+            (highDerivatives >= rippleStart) & ...
+            (highDerivatives <= rippleEnd));
+    end
+
+    ripplesOut = ripplesIn(containsSharpChange, :);
 end
 
 function ripplesOut = splitRipples(ripplesIn, sharpWave, splitPoints)
@@ -279,7 +280,7 @@ end
 
 function peak = getPeak(data, startIndex, endIndex)
     [~, peak] = max(data(startIndex : endIndex));
-    peak = peak + (startIndex - 1);
+    peak = startIndex + (peak - 1);
 end
 
 function varargout = synctimes(varargin)
