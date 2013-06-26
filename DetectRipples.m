@@ -186,13 +186,13 @@ function ripplesOut = splitRipples(ripplesIn, sharpWave, splitPoints)
         ends   = [localSplitPoints; rippleEnd];
 
         % Append to the output each newly-found subripple.
-        for i = 1 : length(starts)
+        for j = 1 : length(starts)
             numRipples = numRipples + 1;
 
-            ripplesOut(numRipples, 1) = starts(i);
+            ripplesOut(numRipples, 1) = starts(j);
             ripplesOut(numRipples, 2) = getPeak( ...
-                sharpWave, starts(i), ends(i));
-            ripplesOut(numRipples, 3) = ends(i);
+                sharpWave, starts(j), ends(j));
+            ripplesOut(numRipples, 3) = ends(j);
         end
     end
 end
