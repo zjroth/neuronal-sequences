@@ -16,10 +16,7 @@
 %    sharpWave
 %       .
 %------------------------------------------------------------------------------
-function sharpWave = computeSharpWave(lowLfp, highLfp, smoothingFilter)
+function sharpWave = computeSharpWave(lowLfp, highLfp)
     % Create the "sharp-wave" ripple by subtracting the low LFP from the high LFP.
     shp = (highLfp - mean(highLfp)) - (lowLfp - mean(lowLfp));
-
-    % Smooth the sharp-wave.
-    sharpWave = conv(shp, smoothingFilter, 'same');
 end
