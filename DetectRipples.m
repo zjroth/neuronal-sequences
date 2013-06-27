@@ -1,52 +1,64 @@
+%
 % USAGE:
 %
-%    [ripples, sharpWave, rippleWave] = DetectRipples(lfp, ...)
+%    ripples = DetectRipples(sharpWave, rippleWave, ...)
 %
 % DESCRIPTION:
 %
-%    Detect ripples...
+%    Detect sharp-wave ripples.
 %
 % ARGUMENTS:
 %
-%    lfp
-%       The LFP data to work with
-%    sampleRate
-%       The sample rate of the data set
+%    sharpWave
+%       .
+%
+%    rippleWave
+%       .
+%
+% OPTIONAL PARAMETERS:
+%
+%    sampleRate (default: 2e4)
+%       .
+%
+%    duration (default: [0.025, 0.200])
+%       .
+%
+%    minSeparation (default: 0.030)
+%       .
+%
+%    minSharpWavePeak (default: 4)
+%       .
+%
+%    minSharpWave (default: 1.5)
+%       .
+%
+%    minRippleWavePeak (default: 2)
+%       .
+%
+%    minRippleWave (default: 1)
+%       .
+%
+%    minFirstDerivative (default: 3)
+%       .
+%
+%    minSecondDerivative (default: 3)
+%       .
 %
 % RETURNS:
 %
 %    ripples
-%       Matrix with rows of the form [startTime, peakTime, endTime]
-%    fShp
-%       .
-%    fRip
-%       .
 %
-% NOTES:
+%       Matrix with entries in seconds and rows of the form [start, peak, end]
 %
-%    This function needs to be cleaned up quite a bit (and perhaps be
-%    completely rewritten). In particular, the arguments `samplRate` and
-%    `totNch` can be read in from a metadata file. Also, a large number of
-%    parameters are set at the beginning of the file; these parameters should
-%    be capable of being set with an optional arguments to the function call.
-function [ripples, sharpWave, rippleWave] = DetectRipples( ...
-    sharpWave, rippleWave, varargin)
+function ripples = DetectRipples(sharpWave, rippleWave, varargin)
     %=======================================================================
     % Default optional parameter values
     %=======================================================================
 
-    % Optional parameter ideas:
-    % - outputFile      (a filename so in-progress work is not lost)
-    % - rippleFreqRange (allowed frequencies for a ripple)
-    % - duration        (how long can a ripple last)
-    % - minSeparation   (how close can ripples be to each other)
-    % - smoothingRadius (width of smoothing filter in milliseconds; single-sided?)
-    % - thresholds?
     sampleRate = 2e4;
     duration = [0.025, 0.200];
     minSeparation = 0.030;
 
-    % threshold SD (standard deviation) for ripple detection
     minSharpWavePeak = 4;
     minSharpWave = 1.5;
 
