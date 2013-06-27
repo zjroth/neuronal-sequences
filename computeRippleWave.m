@@ -1,3 +1,4 @@
+%
 % USAGE:
 %
 %    rippleWaveTs = computeRippleWave(data, ...)
@@ -23,7 +24,7 @@
 %    sampleRate (default: 20000)
 %       The sample rate (in Herz) of the input signal
 %
-%    times
+%    spectTimes
 %       When `dataIsSpect` is true, this is used as the corresponding time data
 %       for the output signal. If not specified, this will default to the vector
 %       `(0 : size(data, 2) - 1) / outputRate`.
@@ -80,13 +81,13 @@ function rippleWaveTs = computeRippleWave(data, varargin)
         spect = data;
 
         % Ensure that there is time data for the spectrogram/output.
-        if exist('times', 'variable')
-            assert(isvector(times) && length(times) == size(spect, 2), ...
+        if exist('spectTimes', 'var')
+            assert(isvector(spectTimes) && length(spectTimes) == size(spect, 2), ...
                 ['computeRippleWave: the specified time data must be a vector ' ...
                 'of the same length as the number of columns of the spectrogram ' ...
                 'data.']);
         else
-            times = (0 : size(spect, 2) - 1) / outputRate;
+            spectTimes = (0 : size(spect, 2) - 1) / outputRate;
         end
     end
 
@@ -96,7 +97,7 @@ function rippleWaveTs = computeRippleWave(data, varargin)
 
     if ~dataIsSpect
         % Compute the spectrogram if necessary.
-        [spect, times, frequencies] = rippleSpectrogram( ...
+        [spect, spectTimes, spectFrequencies] = rippleSpectrogram( ...
             lfp(:)           ,                           ...
             'windowWidth'    , windowWidth,              ...
             'windowStep'     , windowStep,               ...
@@ -104,8 +105,8 @@ function rippleWaveTs = computeRippleWave(data, varargin)
             'frequencyRange' , frequencyRange);
 
         % Save the computed data if a file name was provided.
-        if exist('outputFile', 'variable')
-            save(outputFile, 'lfp', 'spect', 'times', 'frequencies', ...
+        if exist('outputFile', 'var')
+            save(outputFile, 'lfp', 'spect', 'spectTimes', 'spectFrequencies', ...
                 'rippleWave', 'windowWidth', 'windowStep', 'sampleRate', ...
                 'outputRate', 'frequencyRange');
         end
@@ -113,5 +114,5 @@ function rippleWaveTs = computeRippleWave(data, varargin)
 
     % Reduce the spectrogram to the return signal.
     rippleWave = zscore(mean(spect, 1));
-    rippleWaveTs = timeseries(rippleWave(:), times(:));
+    rippleWaveTs = timeseries(rippleWave(:), spectTimes(:));
 end
