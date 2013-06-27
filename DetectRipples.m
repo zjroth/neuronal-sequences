@@ -49,8 +49,12 @@ function [ripples, sharpWave, rippleWave] = DetectRipples( ...
     % threshold SD (standard deviation) for ripple detection
     minSharpWavePeak = 4;
     minSharpWave = 1.5;
+
     minRippleWavePeak = 2;
     minRippleWave = 1;
+
+    minFirstDerivative = 3;
+    minSecondDerivative = 3;
 
     %=======================================================================
     % Initialization and value-checking
@@ -77,7 +81,10 @@ function [ripples, sharpWave, rippleWave] = DetectRipples( ...
 
     % Find the first and second derivatives of the sharp-wave.
     firstDerivative = [0; diff(sharpWave)] * sampleRate;
+    firstDerivative = firstDerivative / std(firstDerivative);
+
     secondDerivative = [0; diff(firstDerivative)] * sampleRate;
+    secondDerivative = secondDerivative / std(secondDerivative);
 
     % Now that we have the necessary signals, we can determine intervals in
     % which the peak of a ripple might be occuring by thresholding the signals
