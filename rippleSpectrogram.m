@@ -21,9 +21,8 @@
 %       The frequency range (in Hertz) for which the spectrogram will be
 %       computed
 %
-%    windowStep (default: 1 / lfpSampleRate)
-%       The step (in seconds) between the centers of successive windows used in
-%       the spectrogram computation
+%    sampleRate (default: 1250)
+%       The rate (in Hertz) at which the resultant spectrogram will be sampled
 %
 %    windowWidth (default: 0.25)
 %       The width (in seconds) of the window to use in the spectrogram
@@ -49,14 +48,13 @@ function [spect, spectTimes, spectFrequencies] = rippleSpectrogram(lfp, varargin
     lfpSampleRate = 2e4;
     frequencyRange = [90, 180];
     windowWidth = 0.25;
+    sampleRate = 1250;
 
     % Replace the default values with any values that were passed to
     % the function.
     parseNamedParams();
 
-    if ~exist('windowStep', 'var')
-        windowStep = (1 / lfpSampleRate);
-    end
+    windowStep = (1 / sampleRate);
 
     %=======================================================================
     % Actual computations
@@ -83,6 +81,6 @@ function [spect, spectTimes, spectFrequencies] = rippleSpectrogram(lfp, varargin
     if exist('outputFile', 'var')
         save(outputFile, 'frequencyRange', 'lfp', 'spect', 'spectTimes', ...
             'spectFrequencies', 'lfpSampleRate', 'windowWidth', ...
-            'windowStep');
+            'sampleRate');
     end
 end
