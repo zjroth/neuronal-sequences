@@ -59,14 +59,14 @@ function ripples = DetectRipples(sharpWave, rippleWave, varargin)
     duration = [0.025, 0.200];
     minSeparation = 0.030;
 
-    minSharpWavePeak = 4;
-    minSharpWave = 1.5;
+    minSharpWavePeak = 2;
+    minSharpWave = 1.6;
 
-    minRippleWavePeak = 2;
-    minRippleWave = 1;
+    minRippleWavePeak = 0;
+    minRippleWave = -Inf;
 
-    minFirstDerivative = 3;
-    minSecondDerivative = 3;
+    minFirstDerivative = 2.75;
+    minSecondDerivative = 2.9;
 
     %=======================================================================
     % Initialization and value-checking
