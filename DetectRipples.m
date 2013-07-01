@@ -151,6 +151,9 @@ function ripples = DetectRipples(sharpWave, rippleWave, varargin)
 %    % Correct adjacent ripples (that are too close).
 %    ripples = correctAdjacent(ripples, minSeparation);
 
+    % Remove ripples that are too short.
+    ripples = ripples(ripples(:, 3) - ripples(:, 1) >= minDuration, :);
+
     % Finally, convert the ripples from index data to time data.
     ripples = ripples / sampleRate;
 end
