@@ -1,3 +1,4 @@
-function rate = sampleRate(data)
-    rate = data.xml.lfpSampleRate;
+% rate = sampleRate(this)
+function rate = sampleRate(this)
+    rate = this.xml.lfpSampleRate;
 end
