@@ -1,10 +1,10 @@
 % function spikeTimes = groupSpikes(spikesStruct)
-function [spikeTimes, cellNumbers] = groupSpikes(spikesStruct)
+function clusterSpikeTimes = groupSpikes(spikesStruct)
     % Build a matrix of unique cell/shank combinations.
     numClusters = max(spikesStruct.totclu);
-    spikeTimes = cell(numClusters, 1);
+    clusterSpikeTimes = cell(numClusters, 1);
 
     for i = 1 : numClusters
-        spikeTimes{i} = spikesStruct.res(spikesStruct.totclu == i);
+        clusterSpikeTimes{i} = spikesStruct.res(spikesStruct.totclu == i);
     end
 end
