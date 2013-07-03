@@ -1,133 +1,52 @@
-script_init_workspace;
 
-load('data/entire-spectrogram.mat');
-load('data/computed-data-orig.mat', 'dat');
+%% Plot ripple spike positions
 
-lfpLow = dat(:, 3);
-lfpHigh = dat(:, 1);
-clear('dat');
+idxs = round(ripples(:, 2) * 1250);
+% idxs = round(ripples(24, 2) * 1250);
 
-smth = @(v, r) conv(v, gaussfilt(2*r*sampleRate + 1), 'same');
+figure();
 
-%%
-load data/entire-spectrogram-50ms-window.mat rplSpect rplTimes rplFreqs
+hold('on');
+plot(neuralData.Track.xPix, neuralData.Track.yPix, '.', 'Color', [0.75, 0.75, 0.75])
+h = plot(neuralData.Track.xPix(round(idxs)), neuralData.Track.yPix(round(idxs)), 'r.');
+hold('off');
 
-spect50ms = zeros(size(rplSpect, 1), length(lfp));
-spect50ms(:, round(rplTimes * sampleRate)) = rplSpect;
+%% Plot Carina's figures
 
-%%
-spect50ms = scaleLfpSpectrogram(spect50ms, rplFreqs);
+clear plotRipples
+plotRipples(ripples, lfpTripleTs, data, ...
+    'events', 1:size(ripples, 1), ...
+    'ripplePadding', 0.05)
 
-%%
+%% Animate path through maze
 
-sharpWave = computeSharpWave(lfpLow, lfpHigh, gaussfilt(2*0.011*sampleRate + 1));
-smthSharpWave = smth(sharpWave, 0.011);
+figure();
+hold('on')
+xlim([0, 700]);
+ylim([0, 400]);
 
-meanSpect = mean(spect, 1);
-rippleWave = zeros(size(lfp)) + mean(mean(spect));
-rippleWave(round(times * sampleRate)) = meanSpect;
-smthRipple = smth(rippleWave, 0.011);
-
-smthRipple250ms = smth(rippleWave250ms, 0.011);
-smthRipple50ms = smthRipple;
-
-thetaWave = zeros(size(lfp)) + mean(mean(thetaSpect));
-thetaWave(round(thetaTimes * sampleRate)) = mean(thetaSpect, 1);
-smthTheta = smth(thetaWave, 0.011);
-
-return;
-
-%%
-
-lowband = 90;
-highband = 180;
-filtOrder = 500;
-avgFiltOrder = 501;
-firfiltb = fir1(filtOrder, [lowband/sampleRate*2,highband/sampleRate*2]);
-avgfiltb = ones(avgFiltOrder,1)/avgFiltOrder;
-rip = Filter0(firfiltb, lfp); % filtering
-rip = rip.^2; % filtered * filtered >0
-rip = zscore(rip);
-fRip = smth(rip, 0.011);
-
-%%
-
-ripples = DetectRipples([lfpHigh, lfp, lfpLow],     ...
-    'sharpWave'            , zscore(smthSharpWave), ...
-    'minSharpWavePeak'     , 3,                     ...
-    'minSharpWave'         , 1.5,                     ...
-                                                    ...
-    'rippleWave'           , zscore(smthRipple50ms),    ...
-    'minRippleWavePeak'    , 1,                     ...
-    'minRippleWave'        , -Inf,                     ...
-                                                    ...
-    'thetaWave'            , zscore(smthTheta),     ...
-    'maxThetaDuringRipple' , 2                      ...
-    );
-
-spw = mtx2spw(ripples);
-
-%%
-
-plotRipples(                         ...
-    uniqueRipples(spwOrig),          ...
-    spw,                             ...
-    [lfpHigh, lfp, lfpLow],          ...
-    zscore(smthSharpWave),           ...
-    spect50ms,          ...
-    zscore(thetaWave),               ...
-    46, ...1 : length(spwOrig.startT), ...
-    rplFreqs, ...
-    'title2', 'LFPs and Eva''s Events',     ...
-    'title1', 'LFPs and My Events',     ...
-    'title3', 'Sharp-wave Signal',     ...
-    'title4', 'Ripple Wave (spect. method)',     ...
-    'title5', 'Ripple Wave (power method)');
-
-%% New plotRipples
-
-plotRipples( ...
-    'ripples1', tmp, ...
-    'ripples2', ripples2, ...
-    'lfpTriple', lfpTriple, ...
-    'sharpWave', sharpWave, ...
-    'sharpThresh', sharpThresh, ...
-    'rippleSpect', rippleSpect, ...
-    'rippleFreqs', rippleFreqs, ...
-    'rippleWave', rippleWave, ...
-    'rippleThresh', rippleThresh, ...
-    'eventsToPlot', eventsToPlot ...
-    );
-
-%% Scatterplot thingy
-
-lengths = (ripples(:, 3) - ripples(:, 1));
-tmp = ripples(lengths > 0.0 & lengths < Inf, :);
-idxs = round(tmp * sampleRate);
-ranges = arrayfun(@colon, idxs(:, 1), idxs(:, 3), 'Uniform', false);
-X = NaN(size(ranges));
-Y = NaN(size(ranges));
-
-for i = 1 : length(ranges)
-    X(i) = max(sharpWave.Data(ranges{i}));
-    Y(i) = max(abs(sharpWaveDeriv(ranges{i})));
+for i = 0 : 975
+    idxs = 1250 * i + (1 : 1250);
+    color = rand(1, 3);
+    plot(Track.xPix(idxs), Track.yPix(idxs), '.', 'Color', color);
+    pause(0.001);
 end
 
-scatter(X, Y);
-xlabel('Max Sharp-Wave');
-ylabel('Max Sharp-Wave Derivative');
+hold('off');
 
-hline(gca, 0.0125, 'r')
+%% Show cell spike positions
 
+figure();
+hold('on')
+plot(Track.xPix, Track.yPix, '.');
+h = [];
 
+for i = 1 : length(spikeTimes)
+    delete(h);
+    idxs = spikeTimes{i};
+    color = rand(1, 3);
+    h = plot(Track.xPix(idxs), Track.yPix(idxs), '.', 'Color', [1, 0, 0]);
+    pause;
+end
 
-%%
-
-
-    lsw = conv(sharpWave.Data, gaussfilt(2*0.15*sampleRate + 1), 'same');
-    lsw = lsw(sharpWave.Time > tmp(10, 1) - 0.2 & sharpWave.Time < tmp(10, 3) + 0.2);
-    sharpDiff = [0; diff(lsw)];
-    sharpDiffDiff = [0; diff(sharpDiff)];
-    figure();
-    plot(sharpDiffDiff);
-
+hold('off');
