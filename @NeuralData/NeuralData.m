@@ -16,13 +16,18 @@
 %
 %    .
 %
-classdef NeuralData
+classdef NeuralData < handle
     properties (GetAccess = public, SetAccess = protected)
         Clu
         Laps
         Spike
         Track
         xml
+
+        smoothingRadius = 0.03;
+        ripples
+
+        rawSampleTimes
     end
 
     methods (Access = public)
@@ -43,9 +48,12 @@ classdef NeuralData
         %
         %---------------------------------------------------------------
         function this = NeuralData(filename)
-            [filePath, baseFileName, ~] = fileparts(filename);
+            [baseFolder, baseFileName, ~] = fileparts(filename);
 
-            load(fullfile(filePath, [baseFileName '_BehavElectrDataLFP.mat']));
+            this.baseFolder = baseFolder;
+            this.baseFileName = baseFileName;
+
+            load(fullfile(baseFolder, [baseFileName '_BehavElectrDataLFP.mat']));
 
             this.Clu = Clu;
             this.Laps = Laps;
@@ -58,6 +66,24 @@ classdef NeuralData
     methods (Access = public)
         clusterSpikeTimes = groupSpikes(this)
 
+        loadChannels(this, main, low, high)
+
+        [lfp, ch] = mainLfp(this)
+        [lfp, ch] = lowLfp(this)
+        [lfp, ch] = highLfp(this)
+
+        sharpWave = getSharpWave(this, varargin);
+        [rippleWave, rippleWaveTimes] = getRippleWave(this, varargin);
+
+        [spect, spectTimes, spectFrequencies] = getRippleSpectrogram(this, varargin);
+
+        n = numDataChannels(this)
+
+        %plt = plotRipples(this, ...)
+
+        ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin)
+
+        rate = rawSampleRate(this)
         rate = sampleRate(this)
 
         % Method ideas:
@@ -75,5 +101,15 @@ classdef NeuralData
         % Other ideas:
         %    If we do need to store ripples for some reason, use files of the
         %    form `ch-<low>-<main>-<high>.rpl` in the subfolder "computed".
+    end
+
+    properties (GetAccess = protected, SetAccess = protected)
+        baseFolder
+        baseFileName
+
+        currentChannels
+        currentLfps
+
+        current = []
     end
 end
