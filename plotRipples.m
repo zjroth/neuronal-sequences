@@ -1,127 +1,137 @@
-function hndl = plotRipples(varargin)
-    % Parameters
-    % - ripples1
-    % - ripples2
-    % - lfpTriple
-    % - sharpWave
-    % - minSharpWavePeak
-    % - minSharpWave
-    % - rippleSpect
-    % - rippleFreqs
-    % - rippleWave
-    % - thetaSpect
-    % - thetaFreqs
-    % - thetaWave
-    % - maxThetaWave
-    % - minRippleWavePeak
-    % - minRippleWave
-    % - eventsToPlot
-    title1 = '';
-    title2 = '';
-    eventsToPlot = 'all';
-
+function hndl = plotRipples(ripples, lfpTriple, data, varargin)
+    ripplePadding = 0.1;
+    events = (1 : size(ripples, 1));
     parseNamedParams();
 
-    if strcmp(eventsToPlot, 'all')
-        eventsToPlot = (1 : size(ripples1, 1));
+    spikeTrains = groupSpikes(data);
+    trackData = data.Track;
+    spikeTrainSampleRate = sampleRate(data);
+
+    if ~exist('neurons', 'var')
+       neurons = (1 : length(spikeTrains));
     end
 
-    % Loop through Eva's events, saving each figure along the way.
-    for i = eventsToPlot
-        % Create a full-screen figure.
-        hdl = figure();
-        screen_size = get(0, 'ScreenSize');
-        set(hdl, 'Position', [0 0 screen_size(3) screen_size(4)]);
+    % Create a full-screen figure.
+    hdl = figure();
+    screenSize = get(0, 'ScreenSize');
+    set(hdl, 'Position', [0 0 screenSize(3) screenSize(4)]);
+    title('test');
 
-        % Get the x-limits.
-        rippleStart = ripples1(i, 1);
-        ripplePeak = ripples1(i, 2);
-        rippleEnd = ripples1(i, 3);
-        x_min = rippleStart - 0.1;
-        x_max = rippleEnd + 0.1;
+    colors = get(gca, 'ColorOrder');
+    numColors = size(colors, 1);
+
+    h(3) = subplot(2, 2, [2, 4]);
+    plot(trackData.xPix(1:10:end), trackData.yPix(1:10:end), '.', 'Color', [0.75, 0.75, 0.75]);
+    tmp = [];
+
+    for i = events %1 : size(ripples, 1)
+        ripple = ripples(i, :);
+        speed = data.Track.speed_MMsec(round(ripple(2) * spikeTrainSampleRate));
+        set(gcf, 'name', ...
+            ['----------Ripple ' num2str(i) '----------' ...
+             'Speed: ' num2str(speed) ' mm/sec----------' ...
+             'Width: ' num2str((ripple(3) - ripple(1)) * 1000) ' ms----------']);
+
+        timeWindow = [ripple(1) - ripplePadding, ripple(3) + ripplePadding];
+        minTime = timeWindow(1);
+        maxTime = timeWindow(2);
 
         % Plot the main ripple events over the LFP-triple.
-        h(1) = subplot(7, 1, 1);
-        plot(subseries(lfpTriple, x_min, x_max));
+        h(1) = subplot(2, 2, 1);
+        localLfpTriple = subseries(lfpTriple, minTime, maxTime);
+        plot(localLfpTriple.Time, localLfpTriple.Data);
+        %ylim([-2000, 2000]);
 
-        for j = 1 : size(ripples1, 1)
-          if (ripples1(j, 1) > x_min || ripples1(j, 3) < x_max)
-            showRipple(ripples1(j, 1), ripples1(j, 2), ripples1(j, 3), [0.5, 0.5, 0.5]);
-          end
+        for j = 1 : size(ripples, 1)
+            if (ripples(j, 1) > minTime || ripples(j, 3) < maxTime)
+                showRipple(ripples(j, :));
+            end
         end
 
-        showRipple(rippleStart, ripplePeak, rippleEnd, [0.5, 0.5, 0.5]);
-        title(title1);
-        xlim([x_min, x_max]);
-        ylim([-2000, 2000]);
+        title(['LFPs and Ripple Event ' num2str(i)]);
+        ylabel('');
+        xlim(timeWindow);
+        set(gca, 'Color', [1, 1, 1]);
 
-        % Plot the secondary ripple events over the LFP-triple.
-        h(2) = subplot(7, 1, 2);
-        plot(subseries(lfpTriple, x_min, x_max));
-        title(title2);
-        xlim([x_min, x_max]);
+        h(2) = subplot(2, 2, 3);
+        hold('on');
 
-        for j = 1 : size(ripples2, 1)
-          if (ripples2(j, 1) > x_min && ripples2(j, 3) < x_max)
-            showRipple(ripples2(j, 1), ripples2(j, 2), ripples2(j, 3), [0.5, 0.5, 0.5]);
-          end
+        firingRates = zeros(size(neurons));
+        for j = 1 : length(neurons)
+            firingRates(j) = length(spikeTrains{neurons(j)}) / ...
+                size(data.Track.xPix, 1) * sampleRate(data);
         end
 
-        % Plot the sharp-wave signal with the corresponding thresholds.
-        h(3) = subplot(7, 1, 3);
-        localSharpWave = subseries(sharpWave, x_min, x_max);
-        plot(localSharpWave);
-        hline(gca, minSharpWavePeak, [1, 0, 0]);
-        hline(gca, minSharpWave, [1, 0, 0]);
-        title('Sharp-Wave Signal');
+        for j = 1 : length(neurons) %1 : size(spikeTrains, 1)
+            if firingRates(j) < 10
+                train = spikeTrains{neurons(j)} / spikeTrainSampleRate;
+                train = train(minTime <= train & train <= maxTime);
 
-        % Plot the sharp-wave first derivative signal with the corresponding threshold.
-        h(4) = subplot(7, 1, 4);
-        localFirstDerivative = subseries(firstDerivative, x_min, x_max);
-        plot(localFirstDerivative);
-        hline(gca, minFirstDerivative, [1, 0, 0]);
-        title('Sharp-Wave First Derivative');
+                spikeColor = colors(mod(j, numColors) + 1, :);
+                plot(train, j * ones(size(train)), '.', 'Color', spikeColor);
+                %set(gcf,'windowbuttonmotionfcn',your_callback);
+            end
+        end
 
-        % Plot the sharp-wave second derivative signal with the corresponding threshold.
-        h(5) = subplot(7, 1, 5);
-        localSecondDerivative = subseries(secondDerivative, x_min, x_max);
-        plot(localSecondDerivative);
-        hline(gca, minSecondDerivative, [1, 0, 0]);
-        title('Sharp-Wave Second Derivative');
+        title('Spike Raster Plot');
+        ylabel('Neuron Number');
+        xlabel('Time (seconds)');
+        xlim(timeWindow);
+        %ylim([min(neurons) - 1, max(neurons) + 1]);
+        ylim([0, length(neurons) + 1]);
+        set(gca, 'Color', [1, 1, 1]);
 
-        % Plot the ripple-band spectrogram.
-        h(6) = subplot(7, 1, 6);
-        localRippleSpect = subseries(rippleSpect, x_min, x_max);
-        PlotColorMap(localRippleSpect.Data', 'x', localRippleSpect.Time, 'y', rippleFreqs);
-        title('Spectrogram in Ripple Frequency Range');
+        hold('off');
 
-        % Plot the ripple-wave signal with the corresponding thresholds.
-        h(7) = subplot(7, 1, 7);
-        localRippleWave = subseries(rippleWave, x_min, x_max);
-        plot(localRippleWave);
-        hline(gca, minRippleWavePeak, [1, 0, 0]);
-        hline(gca, minRippleWave, [1, 0, 0]);
-        title('Ripple-Wave Signal');
+        subplot(2, 2, [2, 4]);
+        hold('on');
+        delete(tmp);
 
-        linkaxes(h, 'x');
-        linkprop([h(1), h(2)], 'YLim');
+        trackTimes = (0 : size(trackData.xPix, 1) - 1) / spikeTrainSampleRate;
+
+        trackSection.xPix = withinRange(trackData.xPix, trackTimes);
+        trackSection.yPix = withinRange(trackData.yPix, trackTimes);
+        tmp(1) = plot(trackSection.xPix, trackSection.yPix, '.', 'Color', [0.25, 0.25, 0.25]);
+
+        idxs = round(withinRange(ripples(:, 2)) * spikeTrainSampleRate);
+        tmp(2) = plot(trackData.xPix(idxs), trackData.yPix(idxs), 'r.');
+        hold('off');
+        set(gca, 'Color', [1, 1, 1]);
+
+        %linkaxes(h(1:2), 'x');
+
+        pause();
+    end
+
+    function newData = withinRange(data, time)
+        if ~exist('time', 'var')
+            time = data;
+        end
+
+        newData = data(minTime <= time & time <= maxTime);
     end
 end
 
-function showRipple(rippleStart, ripplePeak, rippleEnd, rippleColor, rippleOpacity)
-    if nargin < 5
-       rippleOpacity = 0.3;
-    end
-  ylims = get(gca, 'YLim');
-  y_min = ylims(1);
-  y_max = ylims(2);
-  hold('on');
-  vline(gca, ripplePeak, [1 0 0]);
-  fill([rippleStart rippleStart rippleEnd rippleEnd], ...
-       [y_min y_max y_max y_min], ...
-       rippleColor, ...
-       'FaceAlpha', rippleOpacity);
-  hold('off');
+function showRipple(ripple, varargin)
+    rippleColor = [0.5, 0.5, 0.5];
+    rippleOpacity = 0.3;
+
+    parseNamedParams();
+
+    ylims = get(gca, 'YLim');
+    y_min = ylims(1);
+    y_max = ylims(2);
+
+    hold('on');
+
+    fill([ripple(1), ripple(1), ripple(3), ripple(3)], ...
+         [y_min, y_max, y_max, y_min], ...
+         rippleColor, ...
+         'FaceAlpha', rippleOpacity);
+
+    vline(ripple(2), 'color', [1 0 0]);
+
+    hold('off');
 end
 
 function ts_new = subseries(ts, mn, mx)
