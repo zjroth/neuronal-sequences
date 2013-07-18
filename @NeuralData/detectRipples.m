@@ -159,6 +159,9 @@ function ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin
     % Remove ripples that are too short.
     ripples = ripples(ripples(:, 3) - ripples(:, 1) >= minDuration, :);
 
+    % Store these events in this object.
+    this.current.ripples = ripples + round(timeData(1) * sampleRate(this));
+
     % Finally, convert the ripples from index data to time data.
     ripples = (ripples - 1) / sampleRate(this) + timeData(1);
 end

@@ -28,7 +28,7 @@ ylim([0, 400]);
 for i = 0 : 975
     idxs = 1250 * i + (1 : 1250);
     color = rand(1, 3);
-    plot(Track.xPix(idxs), Track.yPix(idxs), '.', 'Color', color);
+    plot(neuralData.Track.xPix(idxs), neuralData.Track.yPix(idxs), '.', 'Color', color);
     pause(0.001);
 end
 
@@ -36,17 +36,39 @@ hold('off');
 
 %% Show cell spike positions
 
+navigateFigures(@(nFig) ...
+    plot(neuralData.Track.xPix, neuralData.Track.yPix, ...
+        'k.', ...
+        neuralData.Track.xPix(spikeTimes{nFig}), ...
+        neuralData.Track.yPix(spikeTimes{nFig}), ...
+        'r.') ...
+);
+
+%%
 figure();
 hold('on')
-plot(Track.xPix, Track.yPix, '.');
+plot(neuralData.Track.xPix, neuralData.Track.yPix, '.');
 h = [];
 
-for i = 1 : length(spikeTimes)
+spikeTimes = neuralData.groupSpikes();
+
+i = 1;
+while true % i = neurons %1 : length(spikeTimes)
     delete(h);
     idxs = spikeTimes{i};
     color = rand(1, 3);
-    h = plot(Track.xPix(idxs), Track.yPix(idxs), '.', 'Color', [1, 0, 0]);
-    pause;
+    h = plot(neuralData.Track.xPix(idxs), neuralData.Track.yPix(idxs), '.', 'Color', [1, 0, 0]);
+%     pause;
+    [~, ~, b] = ginput(1);
+    while b ~= 28 && b ~= 29
+        [~, ~, b] = ginput(1);
+    end
+    
+    if b == 28
+        i = max(i - 1, 1);
+    else
+        i = min(i + 1, length(neurons));
+    end
 end
 
 hold('off');

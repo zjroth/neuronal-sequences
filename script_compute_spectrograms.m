@@ -3,9 +3,10 @@
 load('data/raw-lfp-data.mat');
 
 % Compute the spectrogram every 2 milliseconds.
-windowStep = 0.002;
-sampleRate = 2e4;
+windowStep = 0.0008;
+originalSampleRate = 2e4;
 frequencyRange = [90, 180];
+sampleRate = 1 / windowStep;
 
 % Run these computations for varying widths of the spectrogram
 for windowWidthMS = (50 : 50 : 250)
@@ -23,7 +24,7 @@ for windowWidthMS = (50 : 50 : 250)
         lfpMain,                                     ...
         'windowWidth', windowWidth,                  ...
         'windowStep', windowStep,                    ...
-        'sampleRate', sampleRate,                    ...
+        'sampleRate', originalSampleRate,            ...
         'frequencyRange', frequencyRange);
 
     % Display how long this computation took.
@@ -31,9 +32,10 @@ for windowWidthMS = (50 : 50 : 250)
     disp(['...computation took ' num2str(endToc) ' seconds to complete.']);
 
     % Save the computed data.
-    filename = ['data/spect-' num2str(windowWidthMS) 'ms-window.mat'];
+    filename = ['data/spect-' num2str(sampleRate) 'Hz-' ...
+        num2str(windowWidthMS) 'ms-window.mat'];
     save(filename, 'lfpMain', 'spect', 'times', 'frequencies', 'windowWidth', ...
-        'windowStep', 'sampleRate', 'frequencyRange');
+        'windowStep', 'originalSampleRate', 'sampleRate', 'frequencyRange');
 
     % Avoid running out of memory by clearing the stored data.
     clear('spect', 'times', 'frequencies', 'startTic', 'endToc');
@@ -74,4 +76,3 @@ windowWidthMS = 500;
     filename = ['data/theta-spect-' num2str(windowWidthMS) 'ms-window.mat'];
     save(filename, 'lfpMain', 'spect', 'times', 'frequencies', 'windowWidth', ...
         'windowStep', 'sampleRate', 'frequencyRange');
-

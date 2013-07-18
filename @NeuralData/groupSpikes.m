@@ -7,4 +7,6 @@ function clusterSpikeTimes = groupSpikes(this)
     for i = 1 : numClusters
         clusterSpikeTimes{i} = this.Spike.res(this.Spike.totclu == i);
     end
+
+    this.current.spikeTrains = clusterSpikeTimes;
 end

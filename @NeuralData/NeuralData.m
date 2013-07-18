@@ -30,6 +30,20 @@ classdef NeuralData < handle
         rawSampleTimes
     end
 
+    properties (GetAccess = public, SetAccess = public)
+        parameters = []
+    end
+
+    properties (GetAccess = protected, SetAccess = protected)
+        baseFolder
+        baseFileName
+
+        currentChannels
+        currentLfps
+
+        current = []
+    end
+
     methods (Access = public)
         %---------------------------------------------------------------
         %
@@ -68,9 +82,9 @@ classdef NeuralData < handle
 
         loadChannels(this, main, low, high)
 
-        [lfp, ch] = mainLfp(this)
-        [lfp, ch] = lowLfp(this)
-        [lfp, ch] = highLfp(this)
+        [lfp, ch] = mainLfp(this, indices)
+        [lfp, ch] = lowLfp(this, indices)
+        [lfp, ch] = highLfp(this, indices)
 
         sharpWave = getSharpWave(this, varargin);
         [rippleWave, rippleWaveTimes] = getRippleWave(this, varargin);
@@ -80,12 +94,21 @@ classdef NeuralData < handle
         n = numDataChannels(this)
 
         %plt = plotRipples(this, ...)
-        fig = plotRipplesVsSpikes(this, ripples)
+        fig = plotRipplesVsSpikes(this, varargin)
 
         ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin)
 
         rate = rawSampleRate(this)
         rate = sampleRate(this)
+
+        ordering = sortNeuronsForRipple(this, rippleNumber, varargin)
+        ripples = getRipples(this, rippleNums)
+        setRipple(this, rippleNum, vStartPeakEnd)
+        trains = getSpikeTrains(this)
+        plotLfps(this, varargin)
+        vNearest = getNearestRipples(this, nRipple)
+        computeRippleSpikeMatrix(this)
+        rippleSpikeMatrix = getRippleSpikeMatrix(this)
 
         % Method ideas:
         %    mtx = ripples(this, channels)
@@ -102,15 +125,5 @@ classdef NeuralData < handle
         % Other ideas:
         %    If we do need to store ripples for some reason, use files of the
         %    form `ch-<low>-<main>-<high>.rpl` in the subfolder "computed".
-    end
-
-    properties (GetAccess = protected, SetAccess = protected)
-        baseFolder
-        baseFileName
-
-        currentChannels
-        currentLfps
-
-        current = []
     end
 end

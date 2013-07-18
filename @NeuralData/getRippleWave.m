@@ -19,7 +19,7 @@
 %
 % NOTE:
 %
-%    See `help getRippleSpect` for optional parameters.
+%    See `help getRippleSpectrogram` for optional parameters.
 %
 function [rippleWave, rippleWaveTimes] = getRippleWave(this, varargin)
     % Retrieve the spectrogram that's used to compute the ripple wave.
