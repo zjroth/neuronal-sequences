@@ -110,6 +110,8 @@ classdef NeuralData < handle
         computeRippleSpikeMatrix(this)
         rippleSpikeMatrix = getRippleSpikeMatrix(this)
 
+        nRipples = getRippleCount(this)
+
         % Method ideas:
         %    mtx = ripples(this, channels)
         %       This is fast to compute. Don't provide functionality for
