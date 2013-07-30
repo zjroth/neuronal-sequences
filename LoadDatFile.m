@@ -1,5 +1,5 @@
 function eeg = LoadDatFile(filename, chID, startRead, chunkLength, nChannelsTot)
-% set up array for Dat
+    % set up array for Dat
     eeg = zeros(length(chID), chunkLength);
 
     % load dat data

@@ -1,105 +1,127 @@
-filename = ['/home/s-zroth1/data/Eva-new-maze-2013/' ...
-            'A543-20120422-01/A543-20120422-01'];
-samplRate = 2e4;
-totNch = 256;
-chList = [34, 35, 46];                  % These channels are 1-indexed?
+cd ~/projects/ripple-detector/
+script_init_workspace
 
-time2ms = @(m, s, ms) 60000 * m + 1000 * s + ms;
-startMs = time2ms(5, 36, 200) + 32;
-endMs = startMs + 2000;
+%% Load data and compute the ripple- and sharp-wave.
+clear
+clear loadRatData
+clear NeuralData
+clc
 
-%%%%%%%%%% parameters to play with %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% parameters for program flow control
-plotFig = 0;
+tic;
+neuralData = loadRatData('A543', 2, 'muscimol');
+toc;
 
-highband = 200; % bandpass filter range (180Hz to 90Hz)
-lowband = 90; %
-downsampleRat = 1;
-samplRate = samplRate/downsampleRat;
-filtOrder = 500;  % filter order has to be even; .. the longer the more
-                  % selective, but the operation will be linearly slower
-                  % to the filter order
-avgFiltOrder = 501; % do not change this... length of averaging filter
-avgFiltDelay = floor(avgFiltOrder/2);  % compensated delay period
-filtOrder = ceil(filtOrder/2)*2;           %make sure filter order is even
+tic;
+sw = getSharpWave(neuralData);
+[rw, rwt] = getRippleWave(neuralData);
+toc;
 
-% parameters for ripple period (ms)
-min_sw_period = round(0.025*samplRate/downsampleRat) ; % minimum sharpwave period = 50ms ~ 6 cycles
-max_sw_period = round(0.250*samplRate/downsampleRat); % maximum sharpwave period = 250ms ~ 30 cycles
-                                                      % of ripples (max, not used now)
-min_isw_period = round(0.030*samplRate/downsampleRat); % minimum inter-sharpwave period;
+lfpTriple = [neuralData.lowLfp(), neuralData.mainLfp(), neuralData.highLfp()];
+lfpTriple = bsxfun(@minus, lfpTriple, mean(lfpTriple, 1));
 
-% threshold SD (standard deviation) for ripple detection
-shpThresh_multipSD = 5;     % threshold for ripple detection
-ripThresh_multipSD = 4; % the peak of the detected region must satisfy
-                        % this value on top of being  supra-thresholdf.
+timeline = (0 : size(lfpTriple, 1) - 1) / rawSampleRate(neuralData);
+lfpTripleTs = timeseries(lfpTriple, timeline);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% detection
+%% Find the ripple events and
+tic;
+ripples = neuralData.detectRipples( ...
+    sw, rw, rwt,                    ...
+    'minSharpWavePeak'    , 2,      ...
+    'minSharpWave'        , 1.0,    ...
+                                    ...
+    'minRippleWavePeak'   , 0,      ...
+    'minRippleWave'       , -Inf,   ...
+                                    ...
+    'minFirstDerivative'  , 2.75,   ...
+    'minSecondDerivative' , Inf);
+toc;
 
-% ZACH: Why is this check happening? The function only takes four
-% arguments (and has no `varargin`).
-sevFileName = [filename '.sev'];
-listing = dir(sevFileName);
-Nsamples = listing.bytes / (2 * totNch);
+disp(['Number of detected ripples: ' num2str(size(ripples, 1))]);
 
-disp('Loading data for ripple detection.....');
-% ZACH: This should probably be `for channel = chList` or something
-% like that.
-for nch = 1 : length(chList)
-    syncName = ['chan'  num2str(chList(nch))];
-    fidSev = fopen(sevFileName,'r');
-    startRead = (chList(nch)-1)*Nsamples*2;
-    % ZACH: The variable `dat` is not pre-allocated.
-    dat(:, nch) = LoadSevFile(fidSev,startRead,Nsamples);
+%% Parameters for plotting
+currRipple = 56;
+
+% Set the order of the neurons
+neuronSet = (1 : length(neuralData.getSpikeTrains()));
+% neuronSet = unique(neuralData.parameters.placeCellOrdering, 'stable');
+
+% % Set the order of the ripples
+% rippleOrder = (1 : size(ripples, 1));
+% rippleOrder = neuralData.getNearestRipples(currRipple);
+
+% Sort the ripples by overlap with the neuron set.
+mtxSpikesPerRipple = neuralData.getRippleSpikeMatrix();
+mtxSpikesPerRipple = mtxSpikesPerRipple(unique(neuronSet), :);
+[vals, rippleOrder] = sort(sum(mtxSpikesPerRipple > 0, 1), 'descend');
+rippleOrder = rippleOrder(vals > 10);
+
+% Sort the ripples by...
+clear getNeuronOrderings;
+getNeuronOrderings;
+
+keys = neuronOrderings.optimal.pre.keys;
+vals = neuronOrderings.optimal.pre.values;
+rippleOrder = zeros(length(neuronOrderings.optimal.pre), size(ripples, 1));
+cellOrderings = cell(length(neuronOrderings.optimal.pre), 1);
+
+for i = 1 : length(neuronOrderings.optimal.pre)
+    rippleOrder(i, :) = (sum(mtxSpikesPerRipple(vals{i}, :) > 0) > 15);
+    cellOrderings{i} = { ...
+        vals{i}, ['Pre-muscimol ripple ' num2str(keys{i}) ' ordering'] ...
+    };
 end
-%dat = readmulti([filename '.dat'],totNch,chList); % from .dat
-dat = downsample(dat, downsampleRat);
-dat = dat(samplRate / 1000 * startMs : samplRate / 1000 * endMs, :);
 
-% detect sharp waves based on SD-based threshold:
-shp = dat(:,1)-mean(dat(:,1)) - (dat(:,3)-mean(dat(:,3)));
-filtLength = 100;
-sigma = 75;
-gaussian_filter=1/sqrt(2*pi*sigma^2)*exp(-[0:filtLength-1].^2/(2*sigma^2));
-gaussian_filter=[gaussian_filter(end:-1:2) gaussian_filter];
-fShp = conv(shp, gaussian_filter, 'same');
-% z-score
-fShp = unity(fShp);
+rippleOrder = find(any(rippleOrder, 1));
 
-% detect ripple power
-firfiltb = fir1(filtOrder,[lowband/samplRate*2,highband/samplRate*2]);
-avgfiltb = ones(avgFiltOrder,1)/avgFiltOrder;
+% tmp = cellfun(@(c) find(sum(mtxSpikesPerRipple(c{2}, :) > 0) > 15), ...
+%     neuronOrderings, ...
+%     'UniformOutput', false);
+% rippleOrder = rippleOrder(unique([tmp{:}]));
+% 
+% tmp = cellfun(@(c) {c{2}, ['Pre-muscimol ripple ' num2str(c{1}) ' ordering']}, ...
+%     neuronOrderings, ...
+%     'UniformOutput', false);
+% cellOrderings = @(nRipple) tmp;
 
-rip = Filter0(firfiltb,dat(:,2)); % filtering
-                                  %rip = Filter0(fir_coeffs, dat(:,2));
+activityPattern = neuralData.getRippleActivity(currRipple);
+activityPattern = activityPattern(neuronSet);
 
-%x = dat(:, 2);
-%b = fir_coeffs; %firfiltb;
-%
-%    if size(x,1) == 1
-%        x = x(:);
-%    end
-%
-%    % if mod(length(b),2)~=1
-%    %   error('filter order should be odd');
-%    % end
-%    if mod(length(b),2)~=1
-%        shift = length(b)/2;
-%    else
-%        shift = (length(b)-1)/2;
-%    end
-%
-%    [y0 z] = filter(b,1,x);
-%
-%    rip = [y0(shift+1:end,:) ; z(1:shift,:)];
-%    %shift = (length(b) - mod(length(b), 2)) / 2;
-%    %rip = filter(b, 1, [x; zeros(shift, 1)]);
-%    %rip = rip(shift + 1 : end);
+%% Plot
+rippleOrder = ...
+    [355, 496, 579, 227, 230, 109, 285, 231, 300, 327, 400, 221, 286, ...
+    305, 328, 425, 111, 60];
+rippleOrder = sort(rippleOrder);
+nFigures = length(rippleOrder);
 
-%rip = rip.^2; % filtered * filtered >0
-%rip = unity(rip);
-fRip = conv(unity(rip.^2), gaussian_filter, 'same');
+clear plotRipple
+navigateFigures(nFigures, @(nFig) ...
+    plotRipple(rippleOrder(nFig), lfpTripleTs, neuralData, ...
+        ... 'neuronSet', neuronSet, ...
+        ...'activityPattern', activityPattern, ...
+        'cellOrderings', cellOrderings, ...
+        'removeInterneurons', true, ...
+        'ripplePadding', 0.06) ...
+);
 
-aboveThr = (fShp > shpThresh_multipSD & fRip > ripThresh_multipSD);
-[evUp evDown] = SchmittTrigger_e(aboveThr, 0.5,0.5);
+%%
+
+clear plotRipple
+navigateFigures(size(ripples, 1), @(nFig) ...
+    plotRipple(nFig, lfpTripleTs, neuralData, ...
+        ... 'neuronSet', neuronSet, ...
+        ... 'activityPattern', activityPattern, ...
+        'cellOrderings', {neuronSet}, ...
+        'removeInterneurons', true, ...
+        'ripplePadding', 0.06), ...
+    true ...
+);
+
+
+
+
+
+
+
+
+
+
