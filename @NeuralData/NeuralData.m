@@ -86,7 +86,8 @@ classdef NeuralData < handle
         [lfp, ch] = lowLfp(this, indices)
         [lfp, ch] = highLfp(this, indices)
 
-        sharpWave = getSharpWave(this, varargin);
+        sharpWave = getSharpWave(this, bDownsample);
+        computeSharpWave(this);
         [rippleWave, rippleWaveTimes] = getRippleWave(this, varargin);
 
         [spect, spectTimes, spectFrequencies] = getRippleSpectrogram(this, varargin);
@@ -110,7 +111,9 @@ classdef NeuralData < handle
         computeRippleSpikeMatrix(this)
         rippleSpikeMatrix = getRippleSpikeMatrix(this)
 
+        activeNeurons = getRippleActivity(this, nRipple)
         nRipples = getRippleCount(this)
+        removeRipple(this, nRipple)
 
         % Method ideas:
         %    mtx = ripples(this, channels)

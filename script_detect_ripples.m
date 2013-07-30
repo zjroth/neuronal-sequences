@@ -4,25 +4,19 @@ sampleInterval = 1 / sampleRate;
 
 % Load the data.
 load('data/raw-lfp-data.mat');
-
-load('data/theta-spect-250ms-window.mat', 'spect', 'frequencies', 'times');
-thetaSpect = spect;
-thetaFrequencies = frequencies;
-thetaTimes = times;
-
-load('data/spect-50ms-window.mat', 'spect', 'frequencies', 'times', 'windowStep');
+load('data/spect-1250Hz-100ms-window.mat', 'spect', 'frequencies', 'times', 'windowStep');
 load('data/computed-data-orig.mat', 'spw');
 
 % Compute the signals used to detect ripples.
-filterRadius = 0.025;
+filterRadius = 0.024;
 smth = @(v, w) conv(v, gaussfilt(2 * filterRadius * w + 1), 'same');
 sampleRate2 = 1 / windowStep;
 
-filter   = gaussfilt(2 * filterRadius * sampleRate + 1);
 timeline = (0 : length(lfpMain) - 1) / sampleRate;
 
-sharpWave      = smth(zscore(computeSharpWave(lfpLow, lfpHigh, filter)), sampleRate);
-rippleWave     = smth(zscore(mean(spect, 1)'), sampleRate2);
+sharpWave      = smth(computeSharpWave(lfpLow, lfpHigh), sampleRate);
+rippleWaveTs = computeRippleWave(spect, 'dataIsSpect', true, 'spectTimes', times);
+rippleWave     = smth(rippleWaveTs.Data, sampleRate2);
 
 sharpWaveTs      = timeseries(sharpWave, timeline);
 rippleWaveTs     = timeseries(rippleWave', times);
@@ -39,8 +33,11 @@ lfpTripleTs.Name = 'LFP Data';
 rippleSpectTs    = timeseries(spect', times);
 
 firstDerivative = [0; diff(sharpWave)] * sampleRate2;
+firstDerivative = firstDerivative / std(firstDerivative);
 firstDerivativeTs = timeseries(firstDerivative, times);
+
 secondDerivative = [0; diff(firstDerivative)] * sampleRate2;
+secondDerivative = secondDerivative / std(secondDerivative);
 secondDerivativeTs = timeseries(secondDerivative, times);
 
 % %%
@@ -58,17 +55,16 @@ secondDerivativeTs = timeseries(secondDerivative, times);
 %% Find the ripples
 
 clear DetectRipples
-clc;
 
-minSharpWavePeak = 2; %3;
-minSharpWave = 1;
-minFirstDerivative = 100; %120; %160;
-minSecondDerivative = 0.75e4;
+minSharpWavePeak = 2;
+minSharpWave = 1.6;
+minFirstDerivative = 2.75;
+minSecondDerivative = 2.9;
 
 minRippleWavePeak = 0;
 minRippleWave = -Inf;
 
-[ripples, ~, ~] = DetectRipples(sharpWave, rippleWave, ...
+ripples = DetectRipples(sharpWave, rippleWave, ...
     'sampleRate'           , sampleRate2,              ...
     ...'duration'             , [0.025, 0.05],            ...
                                                        ...
@@ -115,7 +111,7 @@ plotRipples(                                        ...
     'minRippleWavePeak'   , minRippleWavePeak,      ...
     'minRippleWave'       , minRippleWave,          ...
                                                     ...
-    'eventsToPlot'        , 1:30                    ...
+    'eventsToPlot'        , 1:41                    ...
     );
 
 %%

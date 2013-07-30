@@ -47,7 +47,7 @@ function [spect, spectTimes, spectFrequencies] = rippleSpectrogram(lfp, varargin
     % All times are in seconds, and all frequencies are in Hertz.
     lfpSampleRate = 2e4;
     frequencyRange = [90, 180];
-    windowWidth = 0.25;
+    windowWidth = 0.1;
     sampleRate = 1250;
 
     % Replace the default values with any values that were passed to

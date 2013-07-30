@@ -1,5 +1,5 @@
 % Enable parallel processing
-matlabpool('open');
+% matlabpool('open');
 
 % Ensure that this directory is the current directory.
 [folder, ~, ~] = fileparts(mfilename('fullpath'));
