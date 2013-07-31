@@ -13,7 +13,7 @@ toc;
 
 tic;
 sw = getSharpWave(neuralData);
-[rw, rwt] = getRippleWave(neuralData);
+rw = getRippleWave(neuralData);
 toc;
 
 lfpTriple = [neuralData.lowLfp(), neuralData.mainLfp(), neuralData.highLfp()];
@@ -25,7 +25,7 @@ lfpTripleTs = timeseries(lfpTriple, timeline);
 %% Find the ripple events and
 tic;
 ripples = neuralData.detectRipples( ...
-    sw, rw, rwt,                    ...
+    sw, rw.Data, rwt.Time,                    ...
     'minSharpWavePeak'    , 2,      ...
     'minSharpWave'        , 1.0,    ...
                                     ...
@@ -77,7 +77,7 @@ rippleOrder = find(any(rippleOrder, 1));
 %     neuronOrderings, ...
 %     'UniformOutput', false);
 % rippleOrder = rippleOrder(unique([tmp{:}]));
-% 
+%
 % tmp = cellfun(@(c) {c{2}, ['Pre-muscimol ripple ' num2str(c{1}) ' ordering']}, ...
 %     neuronOrderings, ...
 %     'UniformOutput', false);
@@ -115,13 +115,3 @@ navigateFigures(size(ripples, 1), @(nFig) ...
         'ripplePadding', 0.06), ...
     true ...
 );
-
-
-
-
-
-
-
-
-
-

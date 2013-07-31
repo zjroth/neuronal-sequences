@@ -1,7 +1,7 @@
 %
 % USAGE:
 %
-%     [rippleWave, rippleWaveTimes] = getRippleWave(this, varargin)
+%     objRippleWave = getRippleWave(this, varargin)
 %
 % DESCRIPTION:
 %
@@ -21,11 +21,11 @@
 %
 %    See `help getRippleSpectrogram` for optional parameters.
 %
-function [rippleWave, rippleWaveTimes] = getRippleWave(this, varargin)
+function objRippleWave = getRippleWave(this, varargin)
     if ~isfield(this.current, 'rippleWave')
         % Retrieve the spectrogram that's used to compute the ripple wave.
         [spect, rippleWaveTimes, ~] = getRippleSpectrogram(this, varargin{:});
-        this.current.rippleWaveTimes = rippleWaveTimes(:);
+        rippleWaveTimes = rippleWaveTimes(:);
 
         % Use the spectrogram to compute the ripple-wave signal.
         rippleWave = mean(spect, 1);
@@ -33,9 +33,8 @@ function [rippleWave, rippleWaveTimes] = getRippleWave(this, varargin)
 
         % Smooth the signal.
         filter = gaussfilt(2 * round(this.smoothingRadius * sampleRate(this)) + 1);
-        this.current.rippleWave = zscore(conv(rippleWave, filter, 'same'));
+        this.current.rippleWave = timeseries(rippleWave, rippleWaveTimes);
     end
 
-    rippleWave = this.current.rippleWave;
-    rippleWaveTimes = this.current.rippleWaveTimes;
+    objRippleWave = this.current.rippleWave;
 end

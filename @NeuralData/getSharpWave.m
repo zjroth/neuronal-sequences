@@ -34,8 +34,8 @@ function sharpWave = getSharpWave(this)
         this.current.sharpWave = zscore(conv(sharpWave, filter, 'same'));
 
         % Downsample the signal to agree with the ripple wave.
-        [~, vRippleWaveTimes] = getRippleWave(this);
-        vIndices = round(vRippleWaveTimes * rawSampleRate(this));
+        objRippleWave = getRippleWave(this);
+        vIndices = round(objRippleWave.Time * rawSampleRate(this));
         this.current.sharpWave = this.current.sharpWave(timeDataIndices);
     end
 

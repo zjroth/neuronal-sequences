@@ -88,7 +88,7 @@ classdef NeuralData < handle
 
         sharpWave = getSharpWave(this, bDownsample);
         computeSharpWave(this);
-        [rippleWave, rippleWaveTimes] = getRippleWave(this, varargin);
+        objRippleWave = getRippleWave(this, varargin);
 
         [spect, spectTimes, spectFrequencies] = getRippleSpectrogram(this, varargin);
 
