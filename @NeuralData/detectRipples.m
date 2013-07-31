@@ -160,7 +160,7 @@ function ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin
     ripples = ripples(ripples(:, 3) - ripples(:, 1) >= minDuration, :);
 
     % Store these events in this object.
-    this.current.ripples = ripples + round(timeData(1) * sampleRate(this));
+    this.current.ripples = (ripples - 1) / sampleRate(this) + timeData(1);
 
     % Finally, convert the ripples from index data to time data.
     ripples = (ripples - 1) / sampleRate(this) + timeData(1);
