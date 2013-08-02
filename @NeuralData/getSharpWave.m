@@ -1,7 +1,7 @@
 %------------------------------------------------------------------------------
 % USAGE:
 %
-%    sharpWave = getSharpWave(this)
+%    objSharpWave = getSharpWave(this)
 %
 % DESCRIPTION:
 %
@@ -17,26 +17,27 @@
 %
 % RETURNS:
 %
-%    sharpWave
+%    objSharpWave
 %       .
 %
 %------------------------------------------------------------------------------
-function sharpWave = getSharpWave(this)
+function objSharpWave = getSharpWave(this)
     if ~isfield(this.current, 'sharpWave')
         % Center the two LFPs at zero (i.e., subtract their means), take their
         % difference, and then normalize the resultant signal.
-        sharpWave = ...
+        vSharpWave = ...
             (highLfp(this) - mean(highLfp(this))) - ...
             (lowLfp(this) - mean(lowLfp(this)));
 
         % Smooth the signal.
         filter = gaussfilt(2 * round(this.smoothingRadius * rawSampleRate(this)) + 1);
-        this.current.sharpWave = zscore(conv(sharpWave, filter, 'same'));
+        this.current.sharpWave = zscore(conv(vSharpWave, filter, 'same'));
 
         % Downsample the signal to agree with the ripple wave.
         objRippleWave = getRippleWave(this);
         vIndices = round(objRippleWave.Time * rawSampleRate(this));
-        this.current.sharpWave = this.current.sharpWave(timeDataIndices);
+        this.current.sharpWave = timeseries( ...
+            vsharpWave(vIndices), objRippleWave.Time);
     end
 
     sharpWave = this.current.sharpWave;
