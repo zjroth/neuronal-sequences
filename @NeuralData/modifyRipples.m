@@ -5,6 +5,8 @@ function modifyRipples(this)
     timeline = (0 : size(lfpTriple, 1) - 1) / rawSampleRate(this);
     lfpTripleTs = TimeSeries(lfpTriple, timeline);
 
+    strRippleFile = [this.baseFolder filesep 'computed' filesep 'ripples.mat'];
+
     % Create a figure
     fig = figure();
 
@@ -36,6 +38,9 @@ function modifyRipples(this)
         elseif strcmp(eventdata.Key, 'd')
             this.current.ripples = this.current.ripples( ...
                 [(1 : nCurrRipple), (nCurrRipple : end)], :);
+        elseif strcmp(eventdata.Key, 's')
+            mtxRipples = getRipples(this);
+            save(strRippleFile, 'nCurrRipple', 'mtxRipples');
         end
 
         plotRipple(nCurrRipple, lfpTripleTs, this, ...
