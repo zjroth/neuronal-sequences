@@ -273,8 +273,3 @@ function hndl = showRipple(ripple, varargin)
 
     hold('off');
 end
-
-function ts_new = subseries(ts, mn, mx)
-    idxs = (ts.Time > mn & ts.Time < mx);
-    ts_new = getsamples(ts, idxs);
-end
