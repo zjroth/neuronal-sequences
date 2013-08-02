@@ -36,7 +36,7 @@ function objSharpWave = getSharpWave(this)
         % Downsample the signal to agree with the ripple wave.
         objRippleWave = getRippleWave(this);
         vIndices = round(objRippleWave.Time * rawSampleRate(this));
-        this.current.sharpWave = timeseries( ...
+        this.current.sharpWave = TimeSeries( ...
             vsharpWave(vIndices), objRippleWave.Time);
     end
 

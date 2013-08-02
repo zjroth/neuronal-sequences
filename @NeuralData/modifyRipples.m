@@ -3,7 +3,7 @@ function modifyRipples(this)
     lfpTriple = bsxfun(@minus, lfpTriple, mean(lfpTriple, 1));
 
     timeline = (0 : size(lfpTriple, 1) - 1) / rawSampleRate(this);
-    lfpTripleTs = timeseries(lfpTriple, timeline);
+    lfpTripleTs = TimeSeries(lfpTriple, timeline);
 
     % Create a figure
     fig = figure();

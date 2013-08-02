@@ -15,7 +15,7 @@
 % RETURNS:
 %
 %    rippleWaveTs
-%       A timeseries object whose data is the resultant ripple-wave signal
+%       A TimeSeries object whose data is the resultant ripple-wave signal
 %
 % NOTE:
 %
@@ -33,7 +33,7 @@ function objRippleWave = getRippleWave(this, varargin)
 
         % Smooth the signal.
         filter = gaussfilt(2 * round(this.smoothingRadius * sampleRate(this)) + 1);
-        this.current.rippleWave = timeseries(rippleWave, rippleWaveTimes);
+        this.current.rippleWave = TimeSeries(rippleWave, rippleWaveTimes);
     end
 
     objRippleWave = this.current.rippleWave;
