@@ -50,7 +50,7 @@
 %
 %       Matrix with entries in seconds and rows of the form [start, peak, end]
 %
-function ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin)
+function ripples = detectRipples(this, varargin)
     %=======================================================================
     % Default optional parameter values
     %=======================================================================
@@ -74,15 +74,14 @@ function ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin
     % Parse the named parameter list in `varargin`.
     parseNamedParams();
 
-    % Ensure that the signals are column vectors of the same length.
-    assert(iscolumn(sharpWave) && iscolumn(rippleWave) && iscolumn(timeData));
-    assert(length(rippleWave) == length(timeData));
-
     % Convert the time data into index data for the sharp-wave signal, which has
     % the same time data as the raw LFP data. Use this to extract the sharp-wave
     % data at the appropriate times.
-    timeDataIndices = round(timeData * rawSampleRate(this));
-    sharpWave = sharpWave(timeDataIndices);
+    objRippleWave = getRippleWave(this);
+    objSharpWave = getSharpWave(this);
+
+    vRippleWave = objRippleWave.Data;
+    vSharpWave = objSharpWave.Data;
 
     % Now that the optional parameter values have been set, we can use them to
     % deterine the values of certain variables to be used during the
@@ -97,7 +96,7 @@ function ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin
     %=======================================================================
 
     % Find the first and second derivatives of the sharp-wave.
-    firstDerivative = [0; diff(sharpWave)] * sampleRate(this);
+    firstDerivative = [0; diff(vSharpWave)] * sampleRate(this);
     firstDerivative = firstDerivative / std(firstDerivative);
 
     secondDerivative = [0; diff(firstDerivative)] * sampleRate(this);
@@ -107,15 +106,15 @@ function ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin
     % which the peak of a ripple might be occuring by thresholding the signals
     % with the provided thresholds.
     ripplePeakIntervals = getIntervals(  ...
-        (sharpWave > minSharpWavePeak) & ...
-        (rippleWave > minRippleWavePeak));
+        (vSharpWave > minSharpWavePeak) & ...
+        (vRippleWave > minRippleWavePeak));
 
     % In addition to the intervals in which ripple peaks may occur, we also need
     % to determine (initial estimates for) intervals during which an entire
     % ripple may be occuring.
     rippleIntervals = getIntervals(   ...
-        (sharpWave >= minSharpWave) & ...
-        (rippleWave >= minRippleWave));
+        (vSharpWave >= minSharpWave) & ...
+        (vRippleWave >= minRippleWave));
 
     % Fill in the gaps. We will split ripples that are too long later.
     %rippleIntervals = fillGaps(rippleIntervals, minSeparation / 2);
@@ -134,7 +133,7 @@ function ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin
     % those events as ripples or not ripples. Initially, we say that each ripple
     % interval contains a ripple. Store each ripple as a triple, specifically in
     % the form [start, peak, end].
-    ripplePeaks = arrayfun(@(s, e) getPeak(sharpWave, s, e), ...
+    ripplePeaks = arrayfun(@(s, e) getPeak(vSharpWave, s, e), ...
         rippleIntervals(:, 1), rippleIntervals(:, 2));
     ripples = [rippleIntervals(:, 1), ripplePeaks, rippleIntervals(:, 2)];
 
@@ -143,7 +142,7 @@ function ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin
     splitPoints = secondDerivativePeaks.loc;
     splitPointVals = secondDerivative(splitPoints);
     splitPoints = splitPoints(splitPointVals > minSecondDerivative);
-    ripples = splitRipples(ripples, sharpWave, splitPoints);
+    ripples = splitRipples(ripples, vSharpWave, splitPoints);
 
     % Keep only those ripples that have high enough peaks in the sharp-wave
     % signal and in its first derivative.
@@ -160,10 +159,14 @@ function ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin
     ripples = ripples(ripples(:, 3) - ripples(:, 1) >= minDuration, :);
 
     % Store these events in this object.
-    this.current.ripples = (ripples - 1) / sampleRate(this) + timeData(1);
+    ripples = (ripples - 1) / sampleRate(this) + objRippleWave.Time(1);
 
     % Finally, convert the ripples from index data to time data.
-    ripples = (ripples - 1) / sampleRate(this) + timeData(1);
+    this.current.ripples = ripples;
+
+    if isfield(this.current, 'rippleSpikeMatrix')
+        rmfield(this.current, 'rippleSpikeMatrix');
+    end
 end
 
 function ripplesOut = ripplesWithPeaks(ripplesIn, peakIntervals)
