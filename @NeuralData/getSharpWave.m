@@ -37,7 +37,7 @@ function objSharpWave = getSharpWave(this)
         objRippleWave = getRippleWave(this);
         vIndices = round(objRippleWave.Time * rawSampleRate(this));
         this.current.sharpWave = TimeSeries( ...
-            vsharpWave(vIndices), objRippleWave.Time);
+            vSharpWave(vIndices), objRippleWave.Time);
     end
 
     sharpWave = this.current.sharpWave;
