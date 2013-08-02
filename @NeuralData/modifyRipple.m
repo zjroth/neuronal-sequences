@@ -1,6 +1,5 @@
-function modifyRipple(this, nRipple, nStart, nEnd)
-    vSharpWave = getSharpWave(this);
-    [~, nPeak] = max(vSharpWave(nStart : nEnd));
-    nPeak = nStart + (nPeak - 1);
-    this.current.ripples(nRipple, :) = [nStart, nPeak, nEnd];
+function modifyRipple(this, nRipple, nStartTime, nEndTime)
+    objSharpWave = getSharpWave(this);
+    [~, nPeakTime] = max(subseries(objSharpWave, nStartTime, nEndTime));
+    this.current.ripples(nRipple, :) = [nStartTime, nPeakTime, nEndTime];
 end
