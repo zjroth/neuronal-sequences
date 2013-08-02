@@ -31,7 +31,7 @@ function objSharpWave = getSharpWave(this)
 
         % Smooth the signal.
         filter = gaussfilt(2 * round(this.smoothingRadius * rawSampleRate(this)) + 1);
-        this.current.sharpWave = zscore(conv(vSharpWave, filter, 'same'));
+        vSharpWave = zscore(conv(vSharpWave, filter, 'same'));
 
         % Downsample the signal to agree with the ripple wave.
         objRippleWave = getRippleWave(this);
@@ -40,5 +40,5 @@ function objSharpWave = getSharpWave(this)
             vSharpWave(vIndices), objRippleWave.Time);
     end
 
-    sharpWave = this.current.sharpWave;
+    objSharpWave = this.current.sharpWave;
 end
