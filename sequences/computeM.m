@@ -1,4 +1,4 @@
-function mtxM = computeM(vSeq, nMax)
+function M = computeM(vSeq, nMax)
     % Find the unique elements of the sequence.  This is much faster than
     % calling `unique(vSeq)`.
     vUnique = zeros(1, nMax);
