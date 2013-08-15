@@ -4,4 +4,5 @@ function mtxMu = computeMu(mtxM, vN)
     mtxMu = zeros(size(mtxM));
     mtxMu(mtxDenomsNonZero) = (mtxM(mtxDenomsNonZero) ./ ...
         mtxDenoms(mtxDenomsNonZero)) - 0.5;
+    mtxMu = sparse(mtxMu);
 end
