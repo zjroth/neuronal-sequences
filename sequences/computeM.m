@@ -15,10 +15,6 @@ function M = computeM(vSeq, nMax)
     % the sequence. This is an `nElts` by `length(vSeq2)` matrix.
     mtxSupports = bsxfun(@eq, vUnique(:), vSeq(:)');
 
-    % for i = 1 : nElts
-    %     mtxSupports(i, :) = (vSeq == vUnique(i));
-    % end
-
     % Compute the small submatrix of M where non-zeros can exist.
     mtxM = cumsum(mtxSupports, 2) * mtxSupports';
 
