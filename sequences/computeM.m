@@ -4,11 +4,6 @@ function M = computeM(vSeq, nMax)
     vUnique = zeros(1, nMax);
     vUnique(vSeq) = 1;
     vUnique = find(vUnique);
-
-    % We will proceed by mapping each element of `vSeq` to its index in
-    % `vUnique`, thus allowing us to work with a sequence whose elements are
-    % in the range from one to the length of `vUnique`. The second line below
-    % does this mapping.
     nElts = length(vUnique);
 
     % Build a matrix whose row `i` is the indicator vector of where `i` fires in
