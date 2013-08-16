@@ -39,7 +39,7 @@ function hndl = plotRipple(nRipple, lfpTriple, data, varargin)
 
     % Retrieve the collection of ripples from the data, and remove duplicates
     % from the collection of neurons under consideration.
-    ripples = data.getRipples() / sampleRate(data);
+    ripples = data.getRipples();
 
     if ~isempty(activityPattern)
         assert(isvector(activityPattern) && ...
@@ -162,7 +162,6 @@ function bSuccess = moveRippleEdge(hObject, anEmptyArray, lfpAxes, data, nRipple
 
     if bSuccess
         ripple = data.getRipples(nRipple);
-        x = round(x * sampleRate(data));
 
         if b == 1
             % data.setRipple(nRipple, [x, ripple(2:3)]);
@@ -214,7 +213,7 @@ function plotSpikeTrains(data, ripple, trains, timeWindow, colors, varargin)
 
     for j = 1 : size(trains, 1)
         if firingRates(j) < Inf
-            train = trains{j} / sampleRate(data);
+            train = trains{j};
             train = train(minTime <= train & train <= maxTime);
 
             spikeColor = colors(mod(neuronNumbers(j), nColors) + 1, :);
