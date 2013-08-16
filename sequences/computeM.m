@@ -10,11 +10,8 @@ function M = computeM(vSeq, nMax)
     % the sequence. This is an `nElts` by `length(vSeq2)` matrix.
     mtxSupports = bsxfun(@eq, vUnique(:), vSeq(:)');
 
-    % Compute the small submatrix of M where non-zeros can exist. Things are
-    % over-counted on the diagonal; fix this.
-    mtxNumPrev = circshift(cumsum(mtxSupports, 2), [0, 1]);
-    mtxNumPrev(:, 1) = 0;
-    mtxM = mtxNumPrev * mtxSupports';
+    % Compute the small submatrix of M where non-zeros can exist.
+    mtxM = triu(cumsum(mtxSupports, 2) * mtxSupports', 1);
 
     % Fill in a full-size matrix M with the appropriate non-zero values.
     M = sparse([], [], [], nMax, nMax, nnz(mtxM));
