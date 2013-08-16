@@ -31,6 +31,7 @@ classdef NeuralData < handle
     end
 
     properties (GetAccess = public, SetAccess = public)
+        saved = []
         parameters = []
     end
 
@@ -68,6 +69,13 @@ classdef NeuralData < handle
             this.baseFileName = baseFileName;
 
             load(fullfile(baseFolder, [baseFileName '_BehavElectrDataLFP.mat']));
+
+            strRippleFile = [this.baseFolder filesep 'computed' filesep 'ripples.mat'];
+            if exist(strRippleFile, 'file')
+                load(strRippleFile, 'mtxRipples');
+                this.saved.ripples = mtxRipples;
+                this.current.ripples = mtxRipples;
+            end
 
             this.Clu = Clu;
             this.Laps = Laps;
@@ -115,6 +123,11 @@ classdef NeuralData < handle
         activeNeurons = getRippleActivity(this, nRipple)
         nRipples = getRippleCount(this)
         removeRipple(this, nRipple)
+        vSequence = getRippleSequence(this, nRipple, varargin)
+        cellSequences = getRippleSequences(this, varargin)
+
+        modifyRipple(this, nRipple, nStartTime, nEndTime)
+        modifyRipples(this, varargin)
 
         % Method ideas:
         %    mtx = ripples(this, channels)

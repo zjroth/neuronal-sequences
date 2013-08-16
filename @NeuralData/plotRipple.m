@@ -29,6 +29,7 @@ function hndl = plotRipple(this, nRipple, varargin)
     colors = lines();
 
     removeInterneurons = false;
+    restrictToActive = false;
 
     % Retrieve the passed-in optional parameter values.
     parseNamedParams();
@@ -213,6 +214,7 @@ function plotSpikeTrains(data, ripple, trains, timeWindow, colors, varargin)
             size(data.Track.xPix, 1) * sampleRate(data);
     end
 
+    nActive = 0;
     for j = 1 : size(trains, 1)
         if firingRates(j) < Inf
             train = trains{j};
@@ -225,6 +227,9 @@ function plotSpikeTrains(data, ripple, trains, timeWindow, colors, varargin)
             % if length(train) > 0
             %     PlotTicks(train, j * ones(size(train)), 'Color', spikeColor);
             % end
+            if ~isempty(train)
+                nActive = nActive + 1;
+            end
         end
     end
 

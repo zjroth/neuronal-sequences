@@ -1,4 +1,8 @@
-function modifyRipples(this)
+function modifyRipples(this, varargin)
+    removeInterneurons = false;
+    restrictToActive = false;
+    parseNamedParams();
+
     lfpTriple = [lowLfp(this), mainLfp(this), highLfp(this)];
     lfpTriple = bsxfun(@minus, lfpTriple, mean(lfpTriple, 1));
 
