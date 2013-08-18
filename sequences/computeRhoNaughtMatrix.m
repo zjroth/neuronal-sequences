@@ -13,6 +13,6 @@ function [mtxRhoNaught, arrRhoMatrices] = computeRhoNaughtMatrix(cellSeqs, nTria
 
     % Sort the rho values for each pair of sequences (individually), then pick
     % out the matrix of rho_naught values to return.
-    arrRhoMatrices = sort(abs(arrRhoMatrices), 3, 'descend');
-    mtxRhoNaught = arrRhoMatrices(:, :, floor(nTrials * dProb));
+    arrRhoSorted = sort(abs(arrRhoMatrices), 3, 'descend');
+    mtxRhoNaught = arrRhoSorted(:, :, floor(nTrials * dProb));
 end
