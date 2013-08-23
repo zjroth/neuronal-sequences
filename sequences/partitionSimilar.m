@@ -6,7 +6,7 @@ function [bSuccess, vPartition] = partitionSimilar(mtxWeighted)
 
     % Retrieve the number of vertices in the graph, and convert the weighted
     % adjacency matrix into a signed and an unsigned adjacency matrix.
-    nVerts = size(mtxAdjSigned, 1);
+    nVerts = size(mtxWeighted, 1);
     mtxAdjSigned = sign(mtxWeighted);
     mtxAdj = logical(mtxAdjSigned);
 
@@ -45,7 +45,6 @@ function [bSuccess, vPartition] = partitionSimilar(mtxWeighted)
             vAdj = mtxAdj(:, nCurrVertex);
             vAdjSigned = mtxAdjSigned(:, nCurrVertex);
             vSuggestedPartition = nCurrPartition * vAdjSigned;
-            vSuggestedPartition'
 
             % If any of the suggested partions disagree with the previously-set
             % partition, then this graph cannot be partitioned.
