@@ -1,35 +1,41 @@
-% function loadChannels(this, main, low, high)
-function loadChannels(this, main, low, high)
+% function loadChannels(this)
+function loadChannels(this)
+    % The set of current channels must be set before calling this function.
+    assert(~isempty(this.currentChannels), ...
+           ['method `setCurrentChannels` must be called before ' ...
+            'invoking `loadChannels`']
+
     % Use the FMA toolbox to load the binary data.
     datFileName = fullfile(this.baseFolder, [this.baseFileName '.dat']);
 
-    this.setCurrentChannels(main, low, high);
-    channels = [main, low, high];
-
     this.currentLfps = [];
 
-    % For each channel, check to see if the channel has been saved separately
-    % before trying to load it from the main .dat file. Otherwise, load the
-    % channel and then save.
+    % Load each of the channels
     for i = 1 : 3
-        filename = fullfile(                    ...
+        % Each channel must be extracted from the data, which is an expensive
+        % operation. So, when a channel is extracted, the extracted data is
+        % saved to a separate file. Set the name of the file here.
+        strFilename = fullfile(                    ...
             [this.baseFolder filesep() 'lfps'], ...
-            ['ch' num2str(channels(i)) '.mat']);
+            ['ch' num2str(this.currentChannels(i)) '.mat']);
 
-        if exist(filename, 'file')
-            load(filename, 'lfp');
+        % If the file already exists, simply load the data from that file.
+        if exist(strFilename, 'file')
+            load(strFilename, 'lfp');
             this.currentLfps(:, i) = lfp;
             clear('lfp');
         else
+            % ...otherwise, extract the data and save it to a file.
             lfp = LoadBinary(datFileName,            ...
                 'nChannels', this.numDataChannels(), ...
-                'channels', channels(i));
+                'channels', this.currentChannels(i));
 
-            save(filename, 'lfp');
+            save(strFilename, 'lfp');
             this.currentLfps(:, i) = lfp;
             clear('lfp');
         end
     end
 
+    % Finally, set the raw sample times corresponding to the loaded LFPs.
     this.rawSampleTimes = (0 : size(this.currentLfps, 1) - 1) / this.rawSampleRate;
 end

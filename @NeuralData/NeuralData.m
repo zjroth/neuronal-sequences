@@ -39,8 +39,8 @@ classdef NeuralData < handle
         baseFolder
         baseFileName
 
-        currentChannels
-        currentLfps
+        currentChannels = []
+        currentLfps = []
 
         current = []
     end
@@ -88,7 +88,7 @@ classdef NeuralData < handle
     methods (Access = public)
         clusterSpikeTimes = groupSpikes(this)
 
-        loadChannels(this, main, low, high)
+        loadChannels(this)
 
         [lfp, ch] = mainLfp(this, indices)
         [lfp, ch] = lowLfp(this, indices)
