@@ -54,34 +54,44 @@ classdef NeuralData < handle
         %
         % DESCRIPTION:
         %
-        %    .
+        %    Initialize a `NeuralData` object by loading from a specified
+        %    data folder.
         %
         % ARGUMENTS:
         %
-        %    .
-        %       .
+        %    strFolder
+        %       The path to the folder in which the data resides. This must
+        %       end with a path separator (e.g., `/` on unix systems).
         %
         %---------------------------------------------------------------
-        function this = NeuralData(filename)
-            [baseFolder, baseFileName, ~] = fileparts(filename);
+        function this = NeuralData(strFolder)
+            % First, read in the base file name from the meta.txt file. Find
+            % the data on the line that starts with "strBaseFileName = ".
+            strMetaText = fileread([strFolder 'meta.txt']);
+            strBaseFileName = regexp( ...
+                strMetaText, '^strBaseFileName = (.*)$', ...
+                'tokens', 'lineanchors', 'dotexceptnewline');
+            strBaseFileName = strBaseFileName{1}{1};
 
-            this.baseFolder = baseFolder;
-            this.baseFileName = baseFileName;
+            % Store the folder and base filename in this object.
+            this.baseFolder = strFolder;
+            this.baseFileName = strBaseFileName;
 
-            load(fullfile(baseFolder, [baseFileName '_BehavElectrDataLFP.mat']));
-
-            strRippleFile = [this.baseFolder filesep 'computed' filesep 'ripples.mat'];
-            if exist(strRippleFile, 'file')
-                load(strRippleFile, 'mtxRipples');
-                this.saved.ripples = mtxRipples;
-                this.current.ripples = mtxRipples;
-            end
-
+            % Load and store information about the data in this recording.
+            load(fullfile(strFolder, [strBaseFileName '_BehavElectrDataLFP.mat']));
             this.Clu = Clu;
             this.Laps = Laps;
             this.Spike = Spike;
             this.Track = Track;
             this.xml = xml;
+
+            % Load ripple information if it has been saved.
+            strRippleFile = [strFolder filesep 'computed' filesep 'ripples.mat'];
+            if exist(strRippleFile, 'file')
+                load(strRippleFile, 'mtxRipples');
+                this.saved.ripples = mtxRipples;
+                this.current.ripples = mtxRipples;
+            end
         end
     end
 
