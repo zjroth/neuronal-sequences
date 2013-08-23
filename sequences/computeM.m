@@ -11,7 +11,8 @@ function mtxM = computeM(vSeq, nMax)
     mtxSupports = bsxfun(@eq, vUnique(:), vSeq(:)');
 
     % Compute the small submatrix of M where non-zeros can exist.
-    mtxMRestricted = triu(cumsum(mtxSupports, 2) * mtxSupports', 1);
+    mtxMRestricted = cumsum(mtxSupports, 2) * mtxSupports';
+    mtxMRestricted(1 : size(mtxMRestricted, 1) + 1 : numel(mtxMRestricted)) = 0;
 
     % Fill in a full-size matrix M with the appropriate non-zero values.
     mtxM = sparse([], [], [], nMax, nMax, nnz(mtxMRestricted));

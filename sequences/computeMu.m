@@ -9,7 +9,7 @@ function mtxMu = computeMu(mtxM, vN)
     % formula. Since the resultant matrix will likely be sparse, we can speed up
     % computation by using sparse matrices.
     mtxDenoms = vN(:) * vN(:)';
-    mtxDenomsNonZero = sparse(triu(mtxDenoms ~= 0, 1));
+    mtxDenomsNonZero = sparse(mtxDenoms ~= 0);
     mtxMu = zeros(size(mtxM));
     mtxMu(mtxDenomsNonZero) = (mtxM(mtxDenomsNonZero) ./ ...
         mtxDenoms(mtxDenomsNonZero)) - 0.5;
