@@ -3,7 +3,7 @@ function loadChannels(this)
     % The set of current channels must be set before calling this function.
     assert(~isempty(this.currentChannels), ...
            ['method `setCurrentChannels` must be called before ' ...
-            'invoking `loadChannels`']
+            'invoking `loadChannels`']);
 
     % Use the FMA toolbox to load the binary data.
     datFileName = fullfile(this.baseFolder, [this.baseFileName '.dat']);
