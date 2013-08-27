@@ -35,7 +35,7 @@ function plotSpikeTrains(this, nRipple, varargin)
 
     % For each neuron's spike train, plot that spike train along a horizontal
     % line.
-    for j = 1 : size(cellTrains, 1)
+    for j = 1 : length(vNeuronOrder)
         % Extract the current neuron number.
         nCurrNeuron = vNeuronOrder(j);
 
@@ -56,6 +56,6 @@ function plotSpikeTrains(this, nRipple, varargin)
     title(strPlotTitle);
     ylabel('Neuron');
     xlabel('Time (seconds)');
-    xlim(vTimeWindow);
-    ylim([0, length(cellTrains) + 1]);
+    xlim([dMinTime, dMaxTime]);
+    ylim([0, length(vNeuronOrder) + 1]);
 end
