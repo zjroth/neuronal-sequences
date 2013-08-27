@@ -4,7 +4,7 @@ function [mtxRho, vIncluded] = computeRhoMatrix(cellSequences, vNumActiveNeurons
     % think we should probably just get rid of this parameters and do more
     % post-processing on the overlaps of sequences.
     if nargin < 2
-        vNumActiveNeurons = [4, Inf];
+        vNumActiveNeurons = [0, Inf];
     elseif isscalar(vNumActiveNeurons)
         vNumActiveNeurons = [vNumActiveNeurons, Inf];
     end
@@ -37,7 +37,7 @@ function [mtxRho, vIncluded] = computeRhoMatrix(cellSequences, vNumActiveNeurons
     end
 
     % Initialize the matrix of rho values.
-    mtxRho = zeros(nSequences);
+    mtxRho = eye(nSequences);
 
     % Since $\rho(s_1, s_2) = \rho(s_2, s_1)$, we need only to compute the
     % upper-triangular portion of `mtxRho`. Since $\rho(s, s) = 1$ unless $s$ is
@@ -46,9 +46,10 @@ function [mtxRho, vIncluded] = computeRhoMatrix(cellSequences, vNumActiveNeurons
         for j = i + 1 : nSequences
             % A rho value should remain zero if two sequences share no common
             % active neurons.
-            if mtxNumCoactive(i, j) > 0
+            if mtxNumCoactive(i, j) > 1
                 vCoactive = (mtxNeuronActivity(i, :) & mtxNeuronActivity(j, :));
                 mtxRho(i, j) = computeRho(cellMu{i}, cellMu{j}, vCoactive);
+                mtxRho(j, i) = mtxRho(i, j);
             end
         end
     end
