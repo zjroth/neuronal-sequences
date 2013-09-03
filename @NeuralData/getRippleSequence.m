@@ -7,8 +7,8 @@ function vSequence = getRippleSequence(this, nRipple, varargin)
     % Retrieve the ripple for which we are extracting a sequence, and figure out
     % the min/max index corresponding to the ripple window.
     vRipple = this.getRipples(nRipple);
-    nMinIndex = ceil(vRipple(1) * sampleRate(this));
-    nMaxIndex = floor(vRipple(3) * sampleRate(this));
+    nMinIndex = vRipple(1) * sampleRate(this);
+    nMaxIndex = vRipple(3) * sampleRate(this);
 
     % The sequence of neuron firings is stored in two separate fields of
     % `this.Spike`. First, `this.Spike.res` has the firing times (indices) at
