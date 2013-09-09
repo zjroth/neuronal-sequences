@@ -90,5 +90,6 @@ classdef RatData < handle
         plotSpikeTrains(this, vSequenceNums, varargin)
         cellSeqs = getRipples(this, varargin)
         cellSeqs = getRippleSequences(this, varargin)
+        [strSection, nSectionRipple] = identifyRipple(this, nRipple)
     end
 end
