@@ -91,5 +91,8 @@ classdef RatData < handle
         cellSeqs = getRipples(this, varargin)
         cellSeqs = getRippleSequences(this, varargin)
         [strSection, nSectionRipple] = identifyRipple(this, nRipple)
+        vOrder = sortNeuronsForRipple(this, nRipple, varargin)
+        cellTrains = getSpikeTrains(this, bRemoveInterneurons)
+        plotRipple(this, nRipple, varargin)
     end
 end
