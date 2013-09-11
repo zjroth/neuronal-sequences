@@ -135,6 +135,7 @@ classdef NeuralData < handle
         nRipples = getRippleCount(this)
         removeRipple(this, nRipple)
         vSequence = getSequence(this, vTimeWindow, varargin)
+        cellSequences = getSequences(this, mtxTimeWindows, varargin)
         vSequence = getRippleSequence(this, nRipple, varargin)
         cellSequences = getRippleSequences(this, varargin)
 
