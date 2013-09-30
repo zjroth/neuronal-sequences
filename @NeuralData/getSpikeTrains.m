@@ -1,13 +1,16 @@
+% cellTrains = getSpikeTrains(this, bRemoveInterneurons)
 function cellTrains = getSpikeTrains(this, bRemoveInterneurons)
     if nargin < 2
         bRemoveInterneurons = false;
     end
 
-    if ~isfield(this.current, 'spikeTrains')
+    % Ensure that the spike trains have already been grouped.
+    if ~isfield(this.data, 'spikeTrains')
         groupSpikes(this);
     end
 
-    cellTrains = this.current.spikeTrains;
+    % Simply return the already-grouped spike trains.
+    cellTrains = this.data.spikeTrains;
 
     % Interneurons are distracting. Remove them.
     if bRemoveInterneurons && isfield(this.parameters, 'interneurons')

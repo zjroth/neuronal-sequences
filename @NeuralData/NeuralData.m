@@ -97,7 +97,7 @@ classdef NeuralData < handle
     end
 
     methods (Access = public)
-        clusterSpikeTimes = groupSpikes(this)
+        cellSpikeTimes = groupSpikes(this)
 
         loadChannels(this)
 
