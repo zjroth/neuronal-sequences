@@ -1,5 +1,5 @@
-% plotSpikeTrains(this, nRipple, varargin)
-function plotSpikeTrains(this, nRipple, varargin)
+% plotSpikeTrains(this, vTimeWindow, varargin)
+function plotSpikeTrains(this, vTimeWindow, varargin)
     % Set some defaults for this function, and the overwrite those values with
     % any provided optional parameters.
     strPlotTitle = 'Spike Raster Plot';
@@ -10,9 +10,8 @@ function plotSpikeTrains(this, nRipple, varargin)
 
     % Store the start/end of the ripple window, and store the number of colors
     % that we have to work with.
-    vRipple = this.getRipples(nRipple);
-    dMinTime = vRipple(1);
-    dMaxTime = vRipple(3);
+    dMinTime = vTimeWindow(1);
+    dMaxTime = vTimeWindow(2);
     nColors = size(mtxColors, 1);
 
     % Retrieve the trains to be plotted.

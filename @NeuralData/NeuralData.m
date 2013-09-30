@@ -115,7 +115,8 @@ classdef NeuralData < handle
         %plt = plotRipples(this, ...)
         fig = plotRipplesVsSpikes(this, varargin)
         hndl = plotRipple(this, nRipple, varargin)
-        plotSpikeTrains(this, nRipple, varargin)
+        plotRippleSpikeTrains(this, nRipple, varargin)
+        plotSpikeTrains(this, vTimeWindow, varargin)
 
         ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin)
 
