@@ -115,8 +115,6 @@ function hndl = plotRipple(this, nRipple, varargin)
     set(h(1), 'ButtonDownFcn', ...
         { @moveRippleEdge, h(1), this, nRipple, fcnRedraw });
 
-    rippleActivity = this.getRippleActivity(nRipple);
-
     % For each of the provided orderings, create plots of the associated spike
     % trains and activity patterns.
     for i = 1 : length(cellOrderings)
@@ -138,17 +136,6 @@ function hndl = plotRipple(this, nRipple, varargin)
         plotSpikeTrains(this, ripple, spikeTrains(ordering), timeWindow, ...
             colors, 'plotTitle', orderingDesc, 'neuronNumbers', ordering);
         % set(gca, 'XTickLabel', {[]});
-
-        % % Plot the activity pattern. Make the first such plot larger.
-        % subplot(nPlotRows, nPlotCols, (i + (i > 1) : i + 1) * nPlotCols);
-        % mtxActivity = rippleActivity(ordering);
-        %
-        % if ~isempty(activityPattern)
-        %     mtxActivity = [mtxActivity, activityPattern(idxs)];
-        % end
-        %
-        % plotNeuronActivity(mtxActivity);
-        % colorbar();
     end
 
     set(h(end), 'XTickLabelMode', 'auto')
@@ -195,54 +182,6 @@ function plotNeuronActivity(mtx)
     else
         cla();
     end
-end
-
-function plotSpikeTrains(data, ripple, trains, timeWindow, colors, varargin)
-    plotTitle = 'Spike Raster Plot';
-    neuronNumbers = (1 : length(trains));
-    parseNamedParams();
-    set(gca, 'Layer', 'top');
-    hold('on');
-
-    minTime = timeWindow(1); % ripple(1);
-    maxTime = timeWindow(2); % ripple(3);
-    nColors = size(colors, 1);
-
-    firingRates = zeros(size(trains));
-    for j = 1 : length(trains)
-        firingRates(j) = length(trains{j}) / ...
-            size(data.Track.xPix, 1) * sampleRate(data);
-    end
-
-    nActive = 0;
-    for j = 1 : size(trains, 1)
-        if firingRates(j) < Inf
-            train = trains{j};
-            train = train(minTime <= train & train <= maxTime);
-
-            spikeColor = colors(mod(neuronNumbers(j), nColors) + 1, :);
-            % plot(mean(train(ripple(1) <= train & train <= ripple(3))), j, ...
-            %     '.', 'MarkerSize', 20, 'Color', [0.75, 0.75, 0.75]);
-            plot(train, j * ones(size(train)), '.', 'Color', spikeColor);
-            % if length(train) > 0
-            %     PlotTicks(train, j * ones(size(train)), 'Color', spikeColor);
-            % end
-            if ~isempty(train)
-                nActive = nActive + 1;
-            end
-        end
-    end
-
-    title(plotTitle);
-    ylabel('Neuron');
-    % xlabel('Time (seconds)');
-    xlim(timeWindow);
-    ylim([0, length(trains) + 1]);
-    set(gca, 'Color', [1, 1, 1]);
-
-    PlotIntervals([minTime, ripple(1); ripple(3), maxTime], 'rectangles');
-
-    hold('off');
 end
 
 function hndls = showRipples(ripples, timeWindow)
