@@ -61,8 +61,8 @@ function hndl = plotRipple(this, nRipple, varargin)
     maxTime = timeWindow(2);
 
     % Interneurons are distracting. Remove them.
-    if removeInterneurons && isfield(this.parameters, 'interneurons')
-        spikeTrains(this.parameters.interneurons) = {[]};
+    if removeInterneurons
+        spikeTrains(getInterneurons(this)) = {[]};
     end
 
     % Determine the number of rows that our figure will have (for use in the subplot

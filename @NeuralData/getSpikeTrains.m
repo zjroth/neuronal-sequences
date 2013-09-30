@@ -13,7 +13,7 @@ function cellTrains = getSpikeTrains(this, bRemoveInterneurons)
     cellTrains = this.data.spikeTrains;
 
     % Interneurons are distracting. Remove them.
-    if bRemoveInterneurons && isfield(this.parameters, 'interneurons')
-        cellTrains(this.parameters.interneurons) = {[]};
+    if bRemoveInterneurons
+        cellTrains(getInterneurons(this)) = {[]};
     end
 end

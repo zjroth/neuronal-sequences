@@ -18,8 +18,8 @@ function plotSpikeTrains(this, vTimeWindow, varargin)
     cellTrains = getSpikeTrains(this);
 
     % Interneurons are distracting. Remove them.
-    if bRemoveInterneurons && isfield(this.parameters, 'interneurons')
-        cellTrains(this.parameters.interneurons) = {[]};
+    if bRemoveInterneurons
+        cellTrains(getInterneurons(this)) = {[]};
     end
 
     % If a custom ordering wasn't provided, just use the default order.

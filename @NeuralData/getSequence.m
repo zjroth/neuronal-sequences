@@ -21,8 +21,8 @@ function vSequence = getSequence(this, vTimeWindow, varargin)
     % Remove interneurons from this sequence if requested. This is only possible
     % if this object contains the appropriate reference to identified
     % interneurons.
-    if removeInterneurons && isfield(this.parameters, 'interneurons')
-        vInterneurons = this.parameters.interneurons;
+    if removeInterneurons
+        vInterneurons = getInterneurons(this);
 
         for i = 1 : length(vInterneurons)
             vSequence(vSequence == vInterneurons(i)) = [];
