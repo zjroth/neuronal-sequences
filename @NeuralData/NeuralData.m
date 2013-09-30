@@ -150,5 +150,8 @@ classdef NeuralData < handle
 
         modifyRipple(this, nRipple, nStartTime, nEndTime)
         modifyRipples(this, varargin)
+
+        detectInterneurons(this)
+        vInterneurons = getInterneurons(this)
     end
 end
