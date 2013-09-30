@@ -31,6 +31,7 @@ classdef NeuralData < handle
     end
 
     properties (GetAccess = public, SetAccess = public)
+        data = []
         saved = []
         parameters = []
     end
