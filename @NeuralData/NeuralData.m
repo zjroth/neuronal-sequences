@@ -122,7 +122,9 @@ classdef NeuralData < handle
         rate = rawSampleRate(this)
         rate = sampleRate(this)
 
-        ordering = sortNeuronsForRipple(this, rippleNumber, varargin)
+        vOrdering = sortNeuronsInWindow(this, vTimeWindow, varargin)
+        vOrdering = sortNeuronsForRipple(this, nRipple, varargin)
+
         ripples = getRipples(this, rippleNums)
         setRipple(this, rippleNum, vStartPeakEnd)
         trains = getSpikeTrains(this)
