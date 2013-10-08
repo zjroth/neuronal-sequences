@@ -1,6 +1,5 @@
-
 %% Load in the data for the desired rat and recording day.
-objRatData = RatData('A543', '2012-04-22');
+objRatData = RatData('~/data/pastalkova/A543/2012-04-22/');
 
 % Since this data has been saved, use it (for a slight speed increase).
 % This could be replaced with the following code:
@@ -26,10 +25,6 @@ nPost = size(mtxPostMuscRipples, 1);
 
 mtxNeuronActivity = toMatrix(cellSeqs);
 mtxNumCoactive = mtxNeuronActivity * mtxNeuronActivity';
-
-% Load in rho-naught data.
-load ~/data/pastalkova/A543/2012-04-22/rho-naught.mat
-% mtxRhoNaught = cellRhoNaught{1};
 
 % Recompute the matrix of rho values.
 tic;
