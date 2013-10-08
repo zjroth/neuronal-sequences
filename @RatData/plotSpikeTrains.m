@@ -10,25 +10,10 @@ function plotSpikeTrains(this, vSequenceNums, varargin)
     figure();
 
     for i = 1 : nSequences
-        nCurrSequence = vSequenceNums(i);
-
-        % Determine whether the current sequence is in pre, musc, or post
-        % condition.
-        if nCurrSequence <= nPre
-            nRipple = nCurrSequence;
-            objNeuralData = this.pre;
-        elseif nCurrSequence <= nPre + nMusc
-            nRipple = nCurrSequence - nPre;
-            objNeuralData = this.musc;
-        else
-            nRipple = nCurrSequence - nPre - nMusc;
-            objNeuralData = this.post;
-        end
+        [strSection, nRipple] = identifyRipple(this, vSequenceNums(i));
 
         % Plot the sequence.
         subplot(nSequences, 1, i);
-        %vRipple = objNeuralData.getRipples(nRipple);
-        %vTimeWindow = vRipple([1, 3]);
-        plotSpikeTrains(objNeuralData, nRipple, varargin{:});
+        plotRippleSpikeTrains(this.(strSection), nRipple, varargin{:});
     end
 end
