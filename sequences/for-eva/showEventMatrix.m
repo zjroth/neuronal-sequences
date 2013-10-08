@@ -1,76 +1,109 @@
 % showEventMatrix()
-function showEventMatrix(dThresh)
-    if nargin < 1 || isempty(dThresh)
+function showEventMatrix(strDataFile, dThresh, bOnlySigOverlaps)
+    if nargin < 1 || isempty(strDataFile)
+        strDataFile = 'data.mat';
+    end
+
+    if nargin < 2 || isempty(dThresh)
         dThresh = 0.025;
     end
 
-    % Load all of the data.
-    load('data.mat', 'cellSpikeTrains', 'cellSequences', ...
-         'mtxRipples', 'nPre', 'nMusc', 'nPost', 'mtxNeuronActivity', ...
-         'mtxPNaught', 'mtxRho');
-
-    mtxNumCoactive = mtxNeuronActivity * mtxNeuronActivity';
-
-    % A rho value is determined to be significant if it is greater (in
-    % absolute value) than the corresponding rho-naught value and if the
-    % sequences share an appropriate number of active neurons.
-    nMinCoActive = 0;
-    mtxSignificant = triu((mtxPNaught <= dThresh) .* (mtxNumCoactive >= nMinCoActive), 1);
-    mtxSignificant = mtxPNaught .* mtxSignificant;
-    mtxSignificant = mtxSignificant + mtxSignificant.';
-
-    % Use the matrix of "significant" rho values to build a graph, and
-    % determine the graph's sparsity.
-    spmxAdj = spones(mtxSignificant);
-
-    vGroupSizes = [nPre, nMusc, nPost];
-
-    % The number of elements is the number of rows in the correlation matrix.
-    nElts = size(mtxPNaught, 1);
-    assert(sum(vGroupSizes) == nElts);
-
-    % Sort the elements using the default order.
-    vEltOrder = (1 : nElts);
-
-    mtxImage = triu(mtxSignificant(vEltOrder, vEltOrder), 1);
-
-    % Create the figure.
-    hdlFigure = figure();
-
-    whiteImage(log10(mtxImage) .* sign(mtxRho), logical(mtxImage), 0.5, -1);
-    set(gca, 'YDir', 'normal')
-
-    % Label the plot and set x- and y-limits.
-    set(gca,'XTick', [nPre / 2; nPre + nMusc / 2; nPre + nMusc + nPost / 2])
-    set(gca,'XTickLabel', {'Pre-muscimol'; 'Muscimol'; 'Post-muscimol'})
-    set(gca,'YTick', [nPre / 2; nPre + nMusc / 2; nPre + nMusc + nPost / 2])
-    set(gca,'YTickLabel', {'Pre-muscimol'; 'Muscimol'; 'Post-muscimol'})
-    xlabel('Sequence Events');
-    ylabel('Sequence Events');
-    title(['$\log_{10}(p_0) \times \textrm{sign}(\rho)$'], ...
-        'Interpreter', 'latex');
-    xlim([0, nElts]);
-    ylim([0, nElts]);
-
-    % Show lines indicating the separation between pre/musc/post sequences
-    % and a line showing the diagonal.
-    vGroupSplitIndices = cumsum(vGroupSizes);
-    for i = 1 : length(vGroupSplitIndices)
-        vline(vGroupSplitIndices(i));
-        hline(vGroupSplitIndices(i));
+    if nargin < 3
+        bOnlySigOverlaps = true;
     end
 
-    line([0, nElts], [0, nElts]);
+    % Load all of the data.
+    load(strDataFile, 'cellTrainCollns', 'cellSequences', 'mtxEvents', ...
+         'vGroupSizes', 'vCollnNums', 'mtxP', 'mtxRho', 'cellGroupLabels');
 
-    % Create a button to export the figure order.
-    btnDisplay = uicontrol(hdlFigure, ...
-        'Style', 'pushbutton', ...
-        'String', 'View sequences', ...
-        'Position', [10 10 120 40]);
-    set(btnDisplay, 'Callback', @displaySequences);
+    % Determine which neurons are active in each sequence, and determine which event
+    % pairs are significant (based on p-values).
+    nElts = size(mtxP, 1);
+    mtxNeuronActivity = toMatrix(cellSequences);
+    mtxSignificant = triu(mtxP < dThresh, 1);
 
-    % Ensure that the figure has the normal toolbar (for zooming and whatnot).
-    set(hdlFigure, 'toolbar', 'figure')
+    % The number of elements is the number of rows in the correlation matrix.
+    assert(sum(vGroupSizes) == nElts);
+    vGroupSplitIndices = col(cumsum(vGroupSizes));
+    mtxEventRanges = [[1; vGroupSplitIndices + 1], [vGroupSplitIndices; nElts]];
+
+    % Show the p-value matrix
+    dMinNonzero = min(nonzeros(mtxP));
+    mtxImage = log10(max(mtxP, dMinNonzero / 2));
+    [hdlPValueAxes, hdlPValueFigure] = ...
+        showImage(mtxImage .* sign(mtxRho), mtxSignificant, 0.5, [], flipud(jet(64)));
+    title(['$\log_{10}(p_0) \times \textrm{sign}(\rho)$'], ...
+          'Interpreter', 'latex');
+
+    % Label the event groups.
+    strEventLabels = '';
+    for i = 1 : length(cellGroupLabels)
+        cellEventLabels{i} = [ ...
+            cellGroupLabels{i}, ': ', num2str(mtxEventRanges(i, 1)), '--', ...
+            num2str(mtxEventRanges(i, 2)) ...
+            ];
+        strEventLabels = [strEventLabels, cellEventLabels{i}, '; '];
+    end
+
+    txtEventLabels = uicontrol(hdlPValueFigure, ...
+              'Style', 'text', ...
+              'String', strEventLabels, ...
+              ... 'BackgroundColor', [0.9, 0.8, 0.5], ...
+              'HorizontalAlignment', 'left');
+    vExtent = get(txtEventLabels, 'Extent');
+    set(txtEventLabels, 'Position', [140, 10, vExtent(3), vExtent(4)]);
+
+    % Show the matrix of overlaps.
+    mtxNumCoactive = mtxNeuronActivity * mtxNeuronActivity';
+    mtxOverlapImage = triu(mtxNumCoactive, 1);
+
+    if ~bOnlySigOverlaps
+        [hdlOverlapAxes, hdlOverlapFigure] = ...
+            showImage(mtxOverlapImage, mtxOverlapImage, 4, [0, 30], jet(31));
+    else
+        [hdlOverlapAxes, hdlOverlapFigure] = ...
+            showImage(mtxOverlapImage, logical(mtxSignificant), 0.5, [0, 30], jet(31));
+    end
+
+    title('Number of neurons active in pairs of events');
+
+    % Link the axes (for zooming and whatnot).
+    linkaxes([hdlPValueAxes, hdlOverlapAxes], 'xy');
+
+    function [hdlAxes, hdlFigure] = showImage(mtxImage, mtxMask, dThresh, vClim, mtxColors)
+        % Create the figure.
+        hdlFigure = figure();
+
+        whiteImage(mtxImage, mtxMask, dThresh, -1, vClim, mtxColors);
+        hdlAxes = gca();
+
+        set(gca, 'YDir', 'normal');
+        xlabel('Sequence Events');
+        ylabel('Sequence Events');
+
+        % Label the plot and set x- and y-limits.
+        xlim([0, nElts]);
+        ylim([0, nElts]);
+
+        % Show lines indicating the separation between pre/musc/post sequences
+        % and a line showing the diagonal.
+        for i = 1 : length(vGroupSplitIndices)
+            vline(vGroupSplitIndices(i) + 0.5);
+            hline(vGroupSplitIndices(i) + 0.5);
+        end
+
+        line([0, nElts], [0, nElts]);
+
+        % Create a button to display sequences.
+        btnDisplay = uicontrol(hdlFigure, ...
+                               'Style', 'pushbutton', ...
+                               'String', 'View sequences', ...
+                               'Position', [10 10 120 40]);
+        set(btnDisplay, 'Callback', @displaySequences);
+
+        % Ensure that the figure has the normal toolbar (for zooming and whatnot).
+        set(hdlFigure, 'toolbar', 'figure');
+    end
 
     % This function is called when the button is clicked.
     function displaySequences(hObject, eventdata)
@@ -83,15 +116,15 @@ function showEventMatrix(dThresh)
         % the nearest integer (since a pixel is centered on the point that it
         % corresponds to). Now, since the sequences have been sorted (to
         % group them), find the inverse permutation of the current ordering.
-        nSeqX = vEltOrder(round(x));
-        nSeqY = vEltOrder(round(y));
+        nSeqX = round(x);
+        nSeqY = round(y);
 
         % Retrieve the ideal sort order for sequence x, and retrieve the neurons
         % that are active in sequence y. The neuron order is the order given by
         % the ideal order for sequence x with the restriction that all neurons
         % must also belong to sequence y.
-        vOrderForX = sortNeuronsForRipple(nSeqX);
-        vOrderForY = sortNeuronsForRipple(nSeqY);
+        vOrderForX = sortNeuronsForEvent(nSeqX);
+        vOrderForY = sortNeuronsForEvent(nSeqY);
         vInX = find(mtxNeuronActivity(nSeqX, :));
         vInY = find(mtxNeuronActivity(nSeqY, :));
         vNeuronOrderX = intersect(vOrderForX, vInY, 'stable');
@@ -100,7 +133,7 @@ function showEventMatrix(dThresh)
         % Plot the sequences with the above-found sorting order.
         figure();
         set(gcf, 'name', ['rho value: ' num2str(mtxRho(nSeqY, nSeqX)) '; ' ...
-                          'p_0 value: ' num2str(mtxPNaught(nSeqY, nSeqX))]);
+                          'p_0 value: ' num2str(mtxP(nSeqY, nSeqX))]);
 
         subplot(2, 2, 1);
         plotSpikeTrains(nSeqX, vNeuronOrderX);
@@ -119,16 +152,16 @@ function showEventMatrix(dThresh)
         title(['Sequence ' num2str(nSeqY) ' (ideal ordering)']);
     end
 
-    % plotSpikeTrains(nRipple, varargin)
-    function vOrder = sortNeuronsForRipple(nRipple)
-        vRipple = mtxRipples(nRipple, :);
-        cellTrains = getSpikeTrains(nRipple);
+    % plotSpikeTrains(nEvent, varargin)
+    function vOrder = sortNeuronsForEvent(nEvent)
+        vEvent = mtxEvents(nEvent, :);
+        cellTrains = getSpikeTrains(nEvent);
         nNeurons = length(cellTrains);
         vCentersOfMass = zeros(nNeurons, 1);
 
         for j = 1 : nNeurons
             vTrain = cellTrains{j};
-            vTrain = vTrain(vRipple(1) <= vTrain & vTrain <= vRipple(3));
+            vTrain = vTrain(vEvent(1) <= vTrain & vTrain <= vEvent(2));
             vCentersOfMass(j) = mean(vTrain);
         end
 
@@ -137,27 +170,21 @@ function showEventMatrix(dThresh)
         vOrder = vOrder(1 : nnz(~isnan(vCentersOfMass)));
     end
 
-    function cellTrains = getSpikeTrains(nRipple)
-        if nRipple <= nPre
-            cellTrains = cellSpikeTrains(1 : 126);
-        elseif nRipple <= nPre + nMusc
-            cellTrains = cellSpikeTrains(127 : 252);
-        else
-            cellTrains = cellSpikeTrains(253 : 378);
-        end
+    function cellTrains = getSpikeTrains(nEvent)
+        cellTrains = cellTrainCollns{vCollnNums(nEvent)};
     end
 
-    % plotSpikeTrains(nRipple, varargin)
-    function plotSpikeTrains(nRipple, vNeuronOrder)
+    % plotSpikeTrains(nEvent, varargin)
+    function plotSpikeTrains(nEvent, vNeuronOrder)
         mtxColors = lines();
 
-        vRipple = mtxRipples(nRipple, :);
-        cellTrains = getSpikeTrains(nRipple);
+        vEvent = mtxEvents(nEvent, :);
+        cellTrains = getSpikeTrains(nEvent);
 
-        % Store the start/end of the ripple window, and store the number of colors
+        % Store the start/end of the event window, and store the number of colors
         % that we have to work with.
-        dMinTime = vRipple(1);
-        dMaxTime = vRipple(3);
+        dMinTime = vEvent(1);
+        dMaxTime = vEvent(2);
         nColors = size(mtxColors, 1);
 
         % Since each train will be plotted individually, we need to tell matlab not
@@ -227,7 +254,7 @@ function [imagemtx,cBar,clim] = whiteImage(A,mask,thresh,fig,clim,colors);
     widx = (mask < thresh);  % white values
 
     if (nargin < 6 || isempty(colors))
-        colors = flipud(jet(64));
+        colors = jet();
         % note that colors(40,:) = [1 1 0] is yellow
     end
 
@@ -333,6 +360,36 @@ function hline(y, varargin)
 
     xLimits = get(axesHandle, 'XLim');
     line(xLimits, [y, y], 'Color', color, 'Parent', axesHandle);
+end
+
+% mtxSeqs = toMatrix(cellSeqs)
+function mtxSeqs = toMatrix(cellSeqs)
+    % Store the number of sequences, and compute the maximum neuron
+    % value that is involved in any of the provided sequences.
+    nSeqs = length(cellSeqs);
+    nMaxElt = max(cellfun(@myMax, cellSeqs));
+
+    % Initialize the return value. Each sequence corresponds to a row
+    % of this matrix.
+    % NOTE: It might make sense to make this into a sparse matrix.
+    mtxSeqs = zeros(nSeqs, nMaxElt);
+
+    % Since neurons are represented as natural numbers, we can find
+    % the activity of a given sequence by simply assigning `1` to the
+    % index that is the neuron value.
+    for i = 1 : nSeqs
+        mtxSeqs(i, cellSeqs{i}) = 1;
+    end
+end
+
+% For convenience, we want the max of an empty sequence to be negative
+% infinity.
+function n = myMax(v)
+    n = max(v);
+
+    if isempty(n)
+        n = -Inf;
+    end
 end
 
 function parseNamedParams(validNames)
