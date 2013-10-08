@@ -1,21 +1,20 @@
-% showEventMatrix(mtxCorrVals, mtxPVals, vGroupSizes, fcnOnClick)
-function showEventMatrix(mtxCorrVals, mtxPVals, vGroupSizes, fcnOnClick)
+% showEventMatrix(mtxCorrVals, mtxPVals, dThresh, vGroupSizes, fcnOnClick)
+function showEventMatrix(mtxCorrVals, mtxPVals, dThresh, vGroupSizes, fcnOnClick)
     % The number of elements is the number of rows in the correlation matrix.
     nElts = size(mtxCorrVals, 1);
     assert(sum(vGroupSizes) == nElts);
 
-    % Sort the elements by group and then by component size.
-    vEltOrder = (1 : nElts);
-
     % To construct the bubble plot, we need the locations of the rho values
     % that are above the threshold (in absolute value) in addition to the
     % actual values.
-    mtxImage = triu(mtxPVals(vEltOrder, vEltOrder), 1);
+    mtxSignificant = triu(mtxPVals < dThresh, 1);
+    dMinNonzero = min(nonzeros(mtxPVals));
+    mtxImage = log10(max(mtxPVals, dMinNonzero / 2)) .* sign(mtxCorrVals);
 
     % Create the figure.
     hdlFigure = figure();
 
-    whiteImage(log10(mtxImage) .* sign(mtxCorrVals), logical(mtxImage), 0.5, -1);
+    whiteImage(mtxImage, mtxSignificant, 0.5, -1, [], flipud(jet(64)));
     set(gca, 'YDir', 'normal')
 
     % Label the plot and set x- and y-limits.
@@ -26,8 +25,8 @@ function showEventMatrix(mtxCorrVals, mtxPVals, vGroupSizes, fcnOnClick)
     % and a line showing the diagonal.
     vGroupSplitIndices = cumsum(vGroupSizes);
     for i = 1 : length(vGroupSplitIndices)
-        vline(vGroupSplitIndices(i));
-        hline(vGroupSplitIndices(i));
+        vline(vGroupSplitIndices(i) + 0.5);
+        hline(vGroupSplitIndices(i) + 0.5);
     end
 
     line([0, nElts], [0, nElts]);
@@ -54,10 +53,11 @@ function showEventMatrix(mtxCorrVals, mtxPVals, vGroupSizes, fcnOnClick)
         % corresponding function. Since the sequences have potentially been
         % sorted (to group them), use the element ordering to determine the
         % event that actually corresponds to the selected pixel.
-        nEventX = vEltOrder(round(x));
-        nEventY = vEltOrder(round(y));
+        nEventX = round(x);
+        nEventY = round(y);
 
         fcnOnClick(nEventX, nEventY);
+        set(gcf, 'name', ['P value: ' num2str(mtxPVals(nEventY, nEventX))]);
     end
 end
 
