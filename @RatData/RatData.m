@@ -68,5 +68,7 @@ classdef RatData < handle
         vOrder = sortNeuronsForRipple(this, nRipple, varargin)
         cellTrains = getSpikeTrains(this, bRemoveInterneurons)
         plotRipple(this, nRipple, varargin)
+        compareSpikeTrains(this, nSeqX, nSeqY)
+        compareRippleSpikeTrains(this, nSeqX, nSeqY, vActiveNeurons)
     end
 end
