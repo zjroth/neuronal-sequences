@@ -48,7 +48,8 @@ end
 %======================================================================
 
 function loadData(strFolder, hObject, stctHandles)
-    strFolder = [strFolder filesep()];
+    stctHandles.strBaseFolder = strFolder;
+    guidata(hObject, stctHandles);
     set(stctHandles.tbxDataFolder, 'String', strFolder);
 
     try
