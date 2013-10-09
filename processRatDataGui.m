@@ -68,6 +68,27 @@ function loadData(strFolder, hObject, stctHandles)
     end
 end
 
+function saveData(hObject, stctHandles)
+    strFolder = uigetdir();
+
+    if strFolder ~= 0
+        stctHandles.strAnalysisFolder = strFolder;
+        guidata(hObject, stctHandles);
+        strFile = [strFolder filesep() 'data.mat'];
+
+        % Collect the values that we want to save.
+        stctRegions = stctHandles.stctRegions;
+        nRippleWaveChannel = str2num(get(stctHandles.tbxRippleWave, 'String'));
+        nSharpLowChannel = str2num(get(stctHandles.tbxSharpLow, 'String'));
+        nSharpHighChannel = str2num(get(stctHandles.tbxSharpHigh, 'String'));
+        dMaxFiringRate = str2num(get(stctHandles.tbxMaxFiring, 'String'));
+        vInterneurons = str2num(get(stctHandles.tbxInterneuronList, 'String'));
+
+        save(strFile, '-v7.3', 'stctRegions', 'nRippleWaveChannel', ...
+             'nSharpLowChannel', 'nSharpHighChannel', 'dMaxFiringRate', 'vInterneurons');
+    end
+end
+
 function [vX, vY] = getSpikeLocations(objRatData)
     vX = [objRatData.pre.Spike.xMM; objRatData.musc.Spike.xMM; ...
           objRatData.post.Spike.xMM];
@@ -358,6 +379,7 @@ function btnSave_Callback(hObject, eventdata, handles)
     % hObject    handle to btnSave (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
+    saveData(hObject, handles);
 end
 
 % --- Executes on button press in btnSelectRegions.
