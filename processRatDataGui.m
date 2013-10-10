@@ -89,6 +89,65 @@ function saveData(hObject, stctHandles)
     end
 end
 
+function runAnalysis(stctHandles)
+    % Display a timer.
+    nAnalysisTic = tic();
+    updateMessage = @(~, ~) set( ...
+        stctHandles.txtMessage, ...
+        'String', ['Analysis has been running for ' ...
+                   num2str(round(toc(nAnalysisTic))) ' seconds']);
+    objTimer = timer( ...
+        'ExecutionMode', 'fixedRate', ...
+        'Period', 1, ...
+        'TimerFcn', updateMessage);
+    start(objTimer);
+
+    % Retrieve necessary variables.
+    objRatData = stctHandles.objRatData;
+    stctRegions = stctHandles.stctRegions;
+    nRippleWaveChannel = str2num(get(stctHandles.tbxRippleWave, 'String'));
+    nSharpLowChannel = str2num(get(stctHandles.tbxSharpLow, 'String'));
+    nSharpHighChannel = str2num(get(stctHandles.tbxSharpHigh, 'String'));
+    dMaxFiringRate = str2num(get(stctHandles.tbxMaxFiring, 'String'));
+    vInterneurons = str2num(get(stctHandles.tbxInterneuronList, 'String'));
+
+    % Set the current channels in each of the rat's conditions.
+    cellChannels = {nRippleWaveChannel, nSharpLowChannel, nSharpHighChannel};
+
+    objRatData.pre.setCurrentChannels(cellChannels{:});
+    objRatData.musc.setCurrentChannels(cellChannels{:});
+    objRatData.post.setCurrentChannels(cellChannels{:});
+
+    % Compile a list of all sequences.
+    cellSequences = {};
+    cellConditions = {'pre', 'musc', 'post'};
+
+    for i = 1 : length(cellConditions)
+        strCond = cellConditions{i};
+        cellRippleSeqs = getRippleSequences(objRatData.(strCond));
+        cellWheelSeqs = getWheelSequences(objRatData.(strCond));
+        cellPlaceFieldSeqs = getPlaceFieldSequences(objRatData.(strCond));
+
+        cellSequences = {cellSequences; cellRippleSeqs; cellWheelSeqs; ...
+                         cellPlaceFieldSeqs};
+    end
+
+    % Save the sequences in the analysis folder.
+    save([stctHandles.strAnalysisFolder 'cellSequences.mat'], '-v7.3', 'cellSequences');
+
+    % Compute the matrix of rho values and save it.
+    mtxRho = computeRhoMatrix(cellSequences);
+    save([stctHandles.strAnalysisFolder 'mtxRho.mat'], '-v7.3', 'mtxRho');
+
+    % Compute the matrix of p-values.
+    mtxP = computePValues(cellSequences, nTrials, [strFolder 'sequences/']);
+    save([stctHandles.strAnalysisFolder 'mtxP.mat'], '-v7.3', 'mtxP');
+
+    % Stop and delete the timer.
+    stop(objTimer);
+    delete(objTimer);
+end
+
 function [vX, vY] = getSpikeLocations(objRatData)
     vX = [objRatData.pre.Spike.xMM; objRatData.musc.Spike.xMM; ...
           objRatData.post.Spike.xMM];
@@ -372,6 +431,7 @@ function btnRun_Callback(hObject, eventdata, handles)
     % hObject    handle to btnRun (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
+    runAnalysis(handles);
 end
 
 % --- Executes on button press in btnSave.
