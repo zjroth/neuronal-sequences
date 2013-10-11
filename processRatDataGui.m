@@ -68,7 +68,9 @@ function loadData(strFolder, hObject, stctHandles)
     end
 end
 
-function saveData(hObject, stctHandles)
+function bSuccess = saveData(hObject, stctHandles)
+    bSuccess = false;
+
     if isfield(stctHandles, 'strAnalysisFolder')
         % Set the file name that we'll be saving to.
         strFile = [stctHandles.strAnalysisFolder filesep() 'data.mat'];
@@ -84,6 +86,8 @@ function saveData(hObject, stctHandles)
         save(strFile, '-v7.3', 'stctRegions', 'nRippleWaveChannel', ...
              'nSharpLowChannel', 'nSharpHighChannel', 'dMaxFiringRate', ...
              'vInterneurons');
+
+        bSuccess = true;
     else
         errordlg(['Please select a folder to store the parameters in (the ' ...
                   '"Analysis Folder").']);
