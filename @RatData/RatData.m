@@ -70,5 +70,6 @@ classdef RatData < handle
         plotRipple(this, nRipple, varargin)
         compareSpikeTrains(this, nSeqX, nSeqY)
         compareRippleSpikeTrains(this, nSeqX, nSeqY, vActiveNeurons)
+        [mtxEvents, vPreCounts, vMuscCounts, vPostCounts] = getEvents(this)
     end
 end

@@ -147,6 +147,7 @@ classdef NeuralData < handle
 
         mtxTimeWindows = getWheelIntervals(this)
         mtxTimeWindows = getPlaceFieldIntervals(this)
+        [mtxEvents, nRipples, nWheelEvents, nPlaceFieldEvents] = getEvents(this)
 
         modifyRipple(this, nRipple, nStartTime, nEndTime)
         modifyRipples(this, varargin)
