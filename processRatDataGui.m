@@ -432,11 +432,15 @@ function btnBrowse_Callback(hObject, ~, handles)
 end
 
 % --- Executes on button press in btnRun.
-function btnRun_Callback(hObject, eventdata, handles)
+function btnRun_Callback(hObject, ~, handles)
     % hObject    handle to btnRun (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
-    runAnalysis(handles);
+    bSaved = saveData(hObject, handles);
+
+    if bSaved
+        runAnalysis(handles);
+    end
 end
 
 % --- Executes on button press in btnSave.
