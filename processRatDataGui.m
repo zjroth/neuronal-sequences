@@ -84,6 +84,9 @@ function saveData(hObject, stctHandles)
         save(strFile, '-v7.3', 'stctRegions', 'nRippleWaveChannel', ...
              'nSharpLowChannel', 'nSharpHighChannel', 'dMaxFiringRate', ...
              'vInterneurons');
+    else
+        errordlg(['Please select a folder to store the parameters in (the ' ...
+                  '"Analysis Folder").']);
     end
 end
 
