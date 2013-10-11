@@ -69,12 +69,9 @@ function loadData(strFolder, hObject, stctHandles)
 end
 
 function saveData(hObject, stctHandles)
-    strFolder = uigetdir();
-
-    if strFolder ~= 0
-        stctHandles.strAnalysisFolder = strFolder;
-        guidata(hObject, stctHandles);
-        strFile = [strFolder filesep() 'data.mat'];
+    if isfield(stctHandles, 'strAnalysisFolder')
+        % Set the file name that we'll be saving to.
+        strFile = [stctHandles.strAnalysisFolder filesep() 'data.mat'];
 
         % Collect the values that we want to save.
         stctRegions = stctHandles.stctRegions;
@@ -85,7 +82,8 @@ function saveData(hObject, stctHandles)
         vInterneurons = str2num(get(stctHandles.tbxInterneuronList, 'String'));
 
         save(strFile, '-v7.3', 'stctRegions', 'nRippleWaveChannel', ...
-             'nSharpLowChannel', 'nSharpHighChannel', 'dMaxFiringRate', 'vInterneurons');
+             'nSharpLowChannel', 'nSharpHighChannel', 'dMaxFiringRate', ...
+             'vInterneurons');
     end
 end
 
@@ -455,6 +453,17 @@ function btnBrowseAnalysis_Callback(hObject, eventdata, handles)
     % hObject    handle to btnBrowseAnalysis (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
+    strFolder = uigetdir(handles.strDataFolder);
+
+    if strFolder ~= 0
+        if strcmp(strFolder, handles.strDataFolder)
+            errordlg(['Please select a folder different from the ' ...
+                      'data folder.']);
+        else
+            stctHandles.strAnalysisFolder = [strFolder filesep()];
+            guidata(hObject, stctHandles);
+        end
+    end
 end
 
 function tbxAnalysisFolder_Callback(hObject, eventdata, handles)
