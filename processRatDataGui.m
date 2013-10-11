@@ -48,7 +48,7 @@ end
 %======================================================================
 
 function loadData(strFolder, hObject, stctHandles)
-    stctHandles.strBaseFolder = strFolder;
+    stctHandles.strDataFolder = strFolder;
     guidata(hObject, stctHandles);
     set(stctHandles.tbxDataFolder, 'String', strFolder);
 
