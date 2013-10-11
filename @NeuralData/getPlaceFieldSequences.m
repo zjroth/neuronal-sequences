@@ -1,5 +1,5 @@
-% cellSequences = getPlaceCellSequences(this, varargin)
-function cellSequences = getPlaceCellSequences(this, varargin)
+% cellSequences = getPlaceFieldSequences(this, varargin)
+function cellSequences = getPlaceFieldSequences(this, varargin)
     mtxTimeWindows = getPlaceFieldIntervals(this);
     cellSequences = getSequences(this, mtxTimeWindows, varargin{:});
 end
