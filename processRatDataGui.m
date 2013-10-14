@@ -460,19 +460,21 @@ function btnSelectRegions_Callback(hObject, ~, handles)
 end
 
 % --- Executes on button press in btnBrowseAnalysis.
-function btnBrowseAnalysis_Callback(hObject, eventdata, handles)
-    % hObject    handle to btnBrowseAnalysis (see GCBO)
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    structure with handles and user data (see GUIDATA)
-    strFolder = uigetdir(handles.strDataFolder);
+function btnBrowseAnalysis_Callback(hObject, eventdata, stctHandles)
+    % hObject      handle to btnBrowseAnalysis (see GCBO)
+    % eventdata    reserved - to be defined in a future version of MATLAB
+    % stctHandles  structure with handles and user data (see GUIDATA)
+    strFolder = uigetdir(stctHandles.strDataFolder);
 
     if strFolder ~= 0
-        if strcmp(strFolder, handles.strDataFolder)
+        if strcmp(strFolder, stctHandles.strDataFolder)
             errordlg(['Please select a folder different from the ' ...
                       'data folder.']);
         else
-            stctHandles.strAnalysisFolder = [strFolder filesep()];
+            strFolder = [strFolder filesep()];
+            stctHandles.strAnalysisFolder = strFolder;
             guidata(hObject, stctHandles);
+            set(stctHandles.tbxAnalysisFolder, 'String', strFolder);
         end
     end
 end
