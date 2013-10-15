@@ -133,8 +133,8 @@ function runAnalysis(stctHandles)
         cellWheelSeqs = getWheelSequences(objRatData.(strCond));
         cellPlaceFieldSeqs = getPlaceFieldSequences(objRatData.(strCond));
 
-        cellSequences = {cellSequences; cellRippleSeqs; cellWheelSeqs; ...
-                         cellPlaceFieldSeqs};
+        cellSequences = [cellSequences; cellRippleSeqs; cellWheelSeqs; ...
+                         cellPlaceFieldSeqs];
     end
 
     % Save the sequences in the analysis folder.
