@@ -214,27 +214,43 @@ function runAnalysis(stctHandles)
     % Compile a list of all sequences.
     cellSequences = {};
     cellConditions = {'pre', 'musc', 'post'};
+    stctSequences = [];
 
     for i = 1 : length(cellConditions)
+        % Retrieve the currend condition name.
         strCond = cellConditions{i};
+
+        % Retrieve sequences from ripples, wheel runs, and when the animal is
+        % moving through the maze.
         cellRippleSeqs = getRippleSequences(objRatData.(strCond));
         cellWheelSeqs = getWheelSequences(objRatData.(strCond));
         cellPlaceFieldSeqs = getPlaceFieldSequences(objRatData.(strCond));
 
+        % Construct a structure that stores all of the collections of sequences
+        % individually. We will save this.
+        stctSequences.(strCond).ripple = cellRippleSeqs;
+        stctSequences.(strCond).wheel = cellWheelSeqs;
+        stctSequences.(strCond).placeField = cellPlaceFieldSeqs;
+
+        % Construct a list of all of the sequences. This list will be used to
+        % run further computations.
         cellSequences = [cellSequences; cellRippleSeqs; cellWheelSeqs; ...
                          cellPlaceFieldSeqs];
     end
 
     % Save the sequences in the analysis folder.
-    save([stctHandles.strAnalysisFolder 'cellSequences.mat'], '-v7.3', 'cellSequences');
+    save(fullfile(stctHandles.strAnalysisFolder, 'sequences.mat'), ...
+         '-v7.3', 'stctSequences');
 
     % Compute the matrix of rho values and save it.
     mtxRho = computeRhoMatrix(cellSequences);
-    save([stctHandles.strAnalysisFolder 'mtxRho.mat'], '-v7.3', 'mtxRho');
+    save(fullfile(stctHandles.strAnalysisFolder, 'mtxRho.mat'), ...
+         '-v7.3', 'mtxRho');
 
     % Compute the matrix of p-values.
-    mtxP = computePValues(cellSequences, nTrials, [strFolder 'sequences/']);
-    save([stctHandles.strAnalysisFolder 'mtxP.mat'], '-v7.3', 'mtxP');
+    mtxP = computePValues(cellSequences, 1e4, ...
+                          fullfile(stctHandles.strAnalysisFolder, 'sequences'));
+    save(fullfile(stctHandles.strAnalysisFolder, 'mtxP.mat'), '-v7.3', 'mtxP');
 
     % Stop and delete the timer.
     stop(objTimer);
