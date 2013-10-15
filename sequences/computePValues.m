@@ -29,8 +29,8 @@ function mtxP = computePValues(cellSeqs, nTrials, strFolder)
 
                 % Save the distribution if a folder was provided.
                 if bSaveFiles
-                    saveDistribution([strFolder 'seqs-' num2str(i) '-' num2str(j)], ...
-                            vDistribution);
+                    strFile = fullfile(strFolder, ['seqs-' num2str(i) '-' num2str(j)]);
+                    saveDistribution(strFile, vDistribution);
                 end
 
                 % Compute p.
