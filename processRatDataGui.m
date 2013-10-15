@@ -59,6 +59,15 @@ function loadData(strFolder, hObject, stctHandles)
         stctHandles.objRatData = objRatData;
         guidata(hObject, stctHandles);
 
+        % Ensure that the appropriate subfolders exsits.
+        initDataDirStructure(strFolder);
+
+        % Suggest an analysis folder, and populate the appropriate field.
+        stctHandles.strAnalysisFolder = suggestedAnalysisFolder(strFolder);
+        guidata(hObject, stctHandles);
+        set(stctHandles.tbxAnalysisFolder, ...
+            'String', stctHandles.strAnalysisFolder);
+
         % Plot the locations of the spikes (and the regions if they exist).
         plotSpikeAndRegions(stctHandles);
     catch exFailedToLoad
@@ -68,12 +77,89 @@ function loadData(strFolder, hObject, stctHandles)
     end
 end
 
+function strSuggestion = suggestedAnalysisFolder(strDataFolder)
+    % By default, we will suggest that the analysis folder be a subdirectory
+    % of the "analysis" folder, which itself lives inside of the given data
+    % directory.
+    strAnalysisFolder = fullfile(strDataFolder, 'analysis');
+
+    % The suggested name will be "trial{n}", where {n} is the smallest
+    % natural number such that "trial{n}" is not a folder. (The braces are
+    % used to specify string interpolation; they are not part of the string.)
+    % Proceed by finding all folders of this form.
+    stctDirs = dir(fullfile(strAnalysisFolder, 'trial*'));
+    cellTrialDirs = {stctDirs([stctDirs.isdir]).name};
+    cellTokens = discard(@(x) length(x) == 0, ...
+                         regexp(cellTrialDirs, '^trial(\d+)$', ...
+                                'tokens', 'once'));
+    vTrialNums = cellfun(@(x) str2num(x{1}), cellTokens);
+
+    if isempty(vTrialNums)
+        strSuggestion = fullfile(strAnalysisFolder, 'trial1');
+    else
+        % Find the lowest number that we can use.
+        vOneToMaxPlus1 = (1 : max(vTrialNums) + 1);
+        vMissing = setdiff(vOneToMaxPlus1, vTrialNums);
+        strSuggestion = fullfile(strAnalysisFolder, ...
+                                 ['trial' num2str(min(vMissing))]);
+    end
+end
+
+function initDataDirStructure(strFolder)
+    strPreFolder = fullfile(strFolder, 'pre-muscimol');
+    strMuscFolder = fullfile(strFolder, 'muscimol');
+    strPostFolder = fullfile(strFolder, 'post-muscimol');
+
+    if exist(strPreFolder, 'dir')
+        mkdirIfNonexistent(fullfile(strPreFolder, 'lfps'));
+        mkdirIfNonexistent(fullfile(strPreFolder, 'computed'));
+        mkdirIfNonexistent(fullfile(strPreFolder, 'computed', 'spects'));
+    end
+
+    if exist(strMuscFolder, 'dir')
+        mkdirIfNonexistent(fullfile(strMuscFolder, 'lfps'));
+        mkdirIfNonexistent(fullfile(strMuscFolder, 'computed'));
+        mkdirIfNonexistent(fullfile(strMuscFolder, 'computed', 'spects'));
+    end
+
+    if exist(strPostFolder, 'dir')
+        mkdirIfNonexistent(fullfile(strPostFolder, 'lfps'));
+        mkdirIfNonexistent(fullfile(strPostFolder, 'computed'));
+        mkdirIfNonexistent(fullfile(strPostFolder, 'computed', 'spects'));
+    end
+end
+
+function mkdirIfNonexistent(strFolder)
+    if ~exist(strFolder, 'dir')
+        mkdir(strFolder);
+    end
+end
+
+% Set the analysis folder (as a string in the handles structure) based on the
+% string in the corresponding text box.
+function setAnalysisFolder(stctHandles)
+    strFolder = get(stctHandles.tbxAnalysisFolder, 'String');
+
+    if strcmp(strFolder, stctHandles.strDataFolder)
+        errordlg(['Please select a folder different from the ' ...
+                  'data folder.']);
+    else
+        strFolder = [strFolder filesep()];
+        stctHandles.strAnalysisFolder = strFolder;
+        guidata(hObject, stctHandles);
+        set(stctHandles.tbxAnalysisFolder, 'String', strFolder);
+    end
+end
+
 function bSuccess = saveData(hObject, stctHandles)
     bSuccess = false;
 
     if isfield(stctHandles, 'strAnalysisFolder')
+        % Ensure that the analysis folder exists.
+        mkdirIfNonexistent(stctHandles.strAnalysisFolder);
+
         % Set the file name that we'll be saving to.
-        strFile = [stctHandles.strAnalysisFolder filesep() 'data.mat'];
+        strFile = fullfile(stctHandles.strAnalysisFolder, 'data.mat');
 
         % Collect the values that we want to save.
         stctRegions = stctHandles.stctRegions;
@@ -83,10 +169,12 @@ function bSuccess = saveData(hObject, stctHandles)
         dMaxFiringRate = str2num(get(stctHandles.tbxMaxFiring, 'String'));
         vInterneurons = str2num(get(stctHandles.tbxInterneuronList, 'String'));
 
+        % Save the experiment set-up data.
         save(strFile, '-v7.3', 'stctRegions', 'nRippleWaveChannel', ...
              'nSharpLowChannel', 'nSharpHighChannel', 'dMaxFiringRate', ...
              'vInterneurons');
 
+        % Success!! Tell the caller that the save didn't fail silently.
         bSuccess = true;
     else
         errordlg(['Please select a folder to store the parameters in (the ' ...
@@ -467,25 +555,23 @@ function btnBrowseAnalysis_Callback(hObject, eventdata, stctHandles)
     strFolder = uigetdir(stctHandles.strDataFolder);
 
     if strFolder ~= 0
-        if strcmp(strFolder, stctHandles.strDataFolder)
-            errordlg(['Please select a folder different from the ' ...
-                      'data folder.']);
-        else
-            strFolder = [strFolder filesep()];
-            stctHandles.strAnalysisFolder = strFolder;
-            guidata(hObject, stctHandles);
-            set(stctHandles.tbxAnalysisFolder, 'String', strFolder);
-        end
+        setAnalysisFolder(stctHandles);
     end
 end
 
-function tbxAnalysisFolder_Callback(hObject, eventdata, handles)
-    % hObject    handle to tbxAnalysisFolder (see GCBO)
-    % eventdata  reserved - to be defined in a future version of MATLAB
-    % handles    structure with handles and user data (see GUIDATA)
+function tbxAnalysisFolder_Callback(hObject, eventdata, stctHandles)
+    % hObject      handle to tbxAnalysisFolder (see GCBO)
+    % eventdata    reserved - to be defined in a future version of MATLAB
+    % stctHandles  structure with handles and user data (see GUIDATA)
 
     % Hints: get(hObject,'String') returns contents of tbxAnalysisFolder as text
     %        str2double(get(hObject,'String')) returns contents of tbxAnalysisFolder as a double
+    strCurrString = get(stctHandles.tbxAnalysisFolder, 'String');
+
+    % Only update if the string hasn't changed.
+    if ~strcmp(strCurrString, stctHandles.strAnalysisFolder)
+        setAnalysisFolder(stctHandles);
+    end
 end
 
 % --- Executes during object creation, after setting all properties.
