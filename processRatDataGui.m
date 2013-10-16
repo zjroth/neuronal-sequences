@@ -21,7 +21,7 @@
 function varargout = processRatDataGui(varargin)
     % Edit the above text to modify the response to help processRatDataGui
 
-    % Last Modified by GUIDE v2.5 11-Oct-2013 14:45:19
+    % Last Modified by GUIDE v2.5 16-Oct-2013 09:45:41
 
     % Begin initialization code - DO NOT EDIT
     gui_Singleton = 1;
@@ -148,6 +148,20 @@ function setAnalysisFolder(stctHandles)
         stctHandles.strAnalysisFolder = strFolder;
         guidata(hObject, stctHandles);
         set(stctHandles.tbxAnalysisFolder, 'String', strFolder);
+    end
+end
+
+function invokeNeuroscope(strDatFile)
+    % Call neuroscope using the command line, and record the return status.
+    nStatus = system(['neuroscope ' strDatFile]);
+
+    % If the status is non-zero, then there was an issue. Alert the user that
+    % something went wrong.
+    if nStatus ~= 0
+        errordlg(['Failed to start Neuroscope with exit code ' ...
+                  num2str(nStatus) '. Please ensure that Neuroscope is ' ...
+                  'installed and can be started by running `neuroscope` ' ...
+                  'in the command line.']);
     end
 end
 
@@ -601,4 +615,27 @@ function tbxAnalysisFolder_CreateFcn(hObject, eventdata, handles)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
+end
+
+% --- Executes on button press in btnNeuroscope.
+function btnNeuroscope_Callback(hObject, eventdata, handles)
+    % hObject    handle to btnNeuroscope (see GCBO)
+    % eventdata  reserved - to be defined in a future version of MATLAB
+    % handles    structure with handles and user data (see GUIDATA)
+    invokeNeuroscope(fullfile(handles.strDataFolder, ...
+                              'pre-muscimol', '*.dat'));
+end
+
+% --- Executes on button press in btnDetectRipples.
+function btnDetectRipples_Callback(hObject, eventdata, handles)
+    % hObject    handle to btnDetectRipples (see GCBO)
+    % eventdata  reserved - to be defined in a future version of MATLAB
+    % handles    structure with handles and user data (see GUIDATA)
+end
+
+% --- Executes on button press in btnEditEvents.
+function btnEditEvents_Callback(hObject, eventdata, handles)
+    % hObject    handle to btnEditEvents (see GCBO)
+    % eventdata  reserved - to be defined in a future version of MATLAB
+    % handles    structure with handles and user data (see GUIDATA)
 end
