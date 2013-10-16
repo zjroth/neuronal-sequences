@@ -44,19 +44,9 @@ classdef RatData < handle
             objData = matfile([strFolder, 'data.mat'], 'Writable', false);
 
             % Load the data from each of the files.
-            this.pre = NeuralData([strFolder 'pre-muscimol/']);
-            this.musc = NeuralData([strFolder 'muscimol/']);
-            this.post = NeuralData([strFolder 'post-muscimol/']);
-
-            % Set the current channels if they are specified in the data
-            % file.
-            if ~isempty(whos(objData, 'vChannels'))
-                cellChannels = num2cell(objData.vChannels);
-
-                this.pre.setCurrentChannels(cellChannels{:});
-                this.musc.setCurrentChannels(cellChannels{:});
-                this.post.setCurrentChannels(cellChannels{:});
-            end
+            this.pre = NeuralData(fullfile(strFolder, 'pre-muscimol/'));
+            this.musc = NeuralData(fullfile(strFolder, 'muscimol/'));
+            this.post = NeuralData(fullfile(strFolder, 'post-muscimol/'));
         end
     end
 

@@ -85,14 +85,6 @@ classdef NeuralData < handle
             this.Spike = Spike;
             this.Track = Track;
             this.xml = xml;
-
-            % Load ripple information if it has been saved.
-            strRippleFile = [strFolder filesep 'computed' filesep 'ripples.mat'];
-            if exist(strRippleFile, 'file')
-                load(strRippleFile, 'mtxRipples');
-                this.saved.ripples = mtxRipples;
-                this.current.ripples = mtxRipples;
-            end
         end
     end
 
