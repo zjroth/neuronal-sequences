@@ -18,11 +18,8 @@
 %
 classdef NeuralData < handle
     properties (GetAccess = public, SetAccess = protected)
-        Clu
-        Laps
-        Spike
-        Track
-        xml
+        BehavElectrDataLFP
+        Clu, Laps, Spike, Track, xml
 
         smoothingRadius = 0.03;
         ripples
@@ -79,15 +76,36 @@ classdef NeuralData < handle
             this.baseFileName = strBaseFileName;
 
             % Load and store information about the data in this recording.
-            load(fullfile(strFolder, [strBaseFileName '_BehavElectrDataLFP.mat']));
-            this.Clu = Clu;
-            this.Laps = Laps;
-            this.Spike = Spike;
-            this.Track = Track;
-            this.xml = xml;
+            this.BehavElectrDataLFP = ...
+                matfile(fullfile(strFolder, [strBaseFileName ...
+                                '_BehavElectrDataLFP.mat']));
         end
     end
 
+    % getters and setters
+    methods
+        function stctClu = get.Clu(this)
+            stctClu = this.BehavElectrDataLFP.Clu;
+        end
+
+        function stctLaps = get.Laps(this)
+            stctLaps = this.BehavElectrDataLFP.Laps;
+        end
+
+        function stctSpike = get.Spike(this)
+            stctSpike = this.BehavElectrDataLFP.Spike;
+        end
+
+        function stctTrack = get.Track(this)
+            stctTrack = this.BehavElectrDataLFP.Track;
+        end
+
+        function stctXml = get.xml(this)
+            stctXml = this.BehavElectrDataLFP.xml;
+        end
+    end
+
+    % Other methods
     methods (Access = public)
         cellSpikeTimes = groupSpikes(this)
 
