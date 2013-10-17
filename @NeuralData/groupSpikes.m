@@ -10,5 +10,5 @@ function cellSpikeTimes = groupSpikes(this)
         cellSpikeTimes{i} = this.Spike.res(this.Spike.totclu == i) / sampleRate(this);
     end
 
-    this.current.spikeTrains = cellSpikeTimes;
+    this.data.spikeTrains = cellSpikeTimes;
 end
