@@ -622,8 +622,13 @@ function btnNeuroscope_Callback(hObject, eventdata, handles)
     % hObject    handle to btnNeuroscope (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
-    invokeNeuroscope(fullfile(handles.strDataFolder, ...
-                              'pre-muscimol', '*.dat'));
+
+    % Ask the user which drug state to load data from.
+    strCond = questdlg('Choose a condition...', ...
+                       'pre-muscimol', 'muscimol', 'post-muscimol', ...
+                       'str1');
+
+    invokeNeuroscope(fullfile(handles.strDataFolder, strCond, '*.dat'));
 end
 
 % --- Executes on button press in btnDetectRipples.
