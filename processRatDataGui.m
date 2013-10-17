@@ -137,17 +137,38 @@ end
 
 % Set the analysis folder (as a string in the handles structure) based on the
 % string in the corresponding text box.
-function setAnalysisFolder(stctHandles)
+function setAnalysisFolder(hObject, stctHandles)
     strFolder = get(stctHandles.tbxAnalysisFolder, 'String');
 
     if strcmp(strFolder, stctHandles.strDataFolder)
         errordlg(['Please select a folder different from the ' ...
                   'data folder.']);
     else
-        strFolder = [strFolder filesep()];
         stctHandles.strAnalysisFolder = strFolder;
         guidata(hObject, stctHandles);
         set(stctHandles.tbxAnalysisFolder, 'String', strFolder);
+
+        % Load any previously-saved data from this folder.
+        strFile = fullfile(strFolder, 'data.mat');
+
+        if exist(strFile, 'file')
+            stctData = load(strFile);
+
+            set(stctHandles.tbxRippleWave, ...
+                'String', stctData.nRippleWaveChannel);
+            set(stctHandles.tbxSharpLow, ...
+                'String', stctData.nSharpLowChannel);
+            set(stctHandles.tbxSharpHigh, ...
+                'String', stctData.nSharpHighChannel);
+            set(stctHandles.tbxMaxFiring, ...
+                'String', stctData.dMaxFiringRate);
+            set(stctHandles.tbxInterneuronList, ...
+                'String', stctData.vInterneurons);
+
+            stctHandles.stctRegions = stctData.stctRegions;
+            guidata(hObject, stctHandles);
+            plotSpikeAndRegions(stctHandles);
+        end
     end
 end
 
@@ -643,7 +664,8 @@ function btnBrowseAnalysis_Callback(hObject, eventdata, stctHandles)
     strFolder = uigetdir(stctHandles.strDataFolder);
 
     if strFolder ~= 0
-        setAnalysisFolder(stctHandles);
+        set(stctHandles.tbxAnalysisFolder, 'String', strFolder);
+        setAnalysisFolder(hObject, stctHandles);
     end
 end
 
@@ -658,7 +680,7 @@ function tbxAnalysisFolder_Callback(hObject, eventdata, stctHandles)
 
     % Only update if the string hasn't changed.
     if ~strcmp(strCurrString, stctHandles.strAnalysisFolder)
-        setAnalysisFolder(stctHandles);
+        setAnalysisFolder(hObject, stctHandles);
     end
 end
 
