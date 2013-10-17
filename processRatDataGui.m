@@ -603,7 +603,7 @@ function btnBrowse_Callback(hObject, ~, handles)
     strFolder = uigetdir(pwd());
 
     if strFolder ~= 0
-        loadData([strFolder filesep()], hObject, handles);
+        loadData(strFolder, hObject, handles);
     end
 end
 

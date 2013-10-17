@@ -65,7 +65,7 @@ classdef NeuralData < handle
         function this = NeuralData(strFolder)
             % First, read in the base file name from the meta.txt file. Find
             % the data on the line that starts with "strBaseFileName = ".
-            strMetaText = fileread([strFolder 'meta.txt']);
+            strMetaText = fileread(fullfile(strFolder, 'meta.txt'));
             strBaseFileName = regexp( ...
                 strMetaText, '^strBaseFileName = (.*)$', ...
                 'tokens', 'lineanchors', 'dotexceptnewline');
