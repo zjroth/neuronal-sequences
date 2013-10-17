@@ -682,11 +682,14 @@ function btnNeuroscope_Callback(hObject, eventdata, handles)
     % handles    structure with handles and user data (see GUIDATA)
 
     % Ask the user which drug state to load data from.
-    strCond = questdlg('Choose a condition...', ...
+    strCond = questdlg('Choose a condition to load...', ...
+                       'Loading Neuroscope', ...
                        'pre-muscimol', 'muscimol', 'post-muscimol', ...
-                       'str1');
+                       'pre-muscimol');
 
-    invokeNeuroscope(fullfile(handles.strDataFolder, strCond, '*.dat'));
+    if ~isempty(strCond)
+        invokeNeuroscope(fullfile(handles.strDataFolder, strCond, '*.dat'));
+    end
 end
 
 % --- Executes on button press in btnDetectRipples.
