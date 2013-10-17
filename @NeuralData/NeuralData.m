@@ -111,6 +111,7 @@ classdef NeuralData < handle
 
         loadChannels(this)
 
+        objLfps = getLfps(this)
         [lfp, ch] = mainLfp(this, indices)
         [lfp, ch] = lowLfp(this, indices)
         [lfp, ch] = highLfp(this, indices)
