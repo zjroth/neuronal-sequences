@@ -165,6 +165,74 @@ function invokeNeuroscope(strDatFile)
     end
 end
 
+function detectRipples(stctHandles)
+    % Create a dialog to display the progress of this action.
+    strMessage = 'Detecting pre-muscimol ripples...';
+    dProgress = 0;
+    hdlProgressBarFigure = waitbar(0, strMessage);
+
+    % Display a timer.
+    nDetectionTic = tic();
+    updateMessage = @(~, ~) ...
+        waitbar(dProgress, hdlProgressBarFigure, ...
+                {strMessage, ['(Total time: ' ...
+                        num2str(round(toc(nDetectionTic))) ' seconds)']});
+    objTimer = timer( ...
+        'ExecutionMode', 'fixedRate', ...
+        'Period', 1, ...
+        'TimerFcn', updateMessage);
+    start(objTimer);
+
+    % Set the current channels in each of the rat's conditions.
+    nRippleWaveChannel = str2num(get(stctHandles.tbxRippleWave, 'String'));
+    nSharpLowChannel = str2num(get(stctHandles.tbxSharpLow, 'String'));
+    nSharpHighChannel = str2num(get(stctHandles.tbxSharpHigh, 'String'));
+
+    cellChannels = {nRippleWaveChannel, nSharpLowChannel, nSharpHighChannel};
+
+    objRatData.pre.setCurrentChannels(cellChannels{:});
+    objRatData.musc.setCurrentChannels(cellChannels{:});
+    objRatData.post.setCurrentChannels(cellChannels{:});
+
+    % Detect the ripples and save them to the ripple file.
+    stctRipples = [];
+    strMessage = 'Detecting pre-muscimol ripples...';
+    stctRipples.pre = stctHandles.objRatData.pre.detectRipples();
+
+    strMessage = 'Detecting muscimol ripples...';
+    dProgress = 0.2;
+    stctRipples.musc = stctHandles.objRatData.musc.detectRipples();
+
+    strMessage = 'Detecting post-muscimol ripples...';
+    dProgress = 0.4;
+    stctRipples.post = stctHandles.objRatData.post.detectRipples();
+
+    strMessage = 'Saving ripples...';
+    dProgress = 0.6;
+    strRippleFile = fullfile(stctHandles.strAnalysisFolder, 'ripples.mat');
+    save(strRippleFile, 'stctRipples');
+
+    % For convenience, also store the start and end of the ripples as events. To
+    % ensure that no data is overwritten, we access the event file using the
+    % `matfile` function. There are performance penalties to pay for this, but
+    % they should be minor in this case.
+    strEventFile = fullfile(stctHandles.strAnalysisFolder, 'events.mat');
+    objEventFile = matfile(strEventFile);
+
+    strMessage = 'Saving ripple events...';
+    dProgress = 0.8;
+    objEventFile.pre.ripple = stctRipples.pre([1, 3]);
+    objEventFile.musc.ripple = stctRipples.musc([1, 3]);
+    objEventFile.post.ripple = stctRipples.post([1, 3]);
+
+    dProgress = 1;
+    strMessage = 'Finished!';
+
+    % Stop and delete the timer.
+    stop(objTimer);
+    delete(objTimer);
+end
+
 function bSuccess = saveData(hObject, stctHandles)
     bSuccess = false;
 
@@ -212,18 +280,8 @@ function runAnalysis(stctHandles)
     % Retrieve necessary variables.
     objRatData = stctHandles.objRatData;
     stctRegions = stctHandles.stctRegions;
-    nRippleWaveChannel = str2num(get(stctHandles.tbxRippleWave, 'String'));
-    nSharpLowChannel = str2num(get(stctHandles.tbxSharpLow, 'String'));
-    nSharpHighChannel = str2num(get(stctHandles.tbxSharpHigh, 'String'));
     dMaxFiringRate = str2num(get(stctHandles.tbxMaxFiring, 'String'));
     vInterneurons = str2num(get(stctHandles.tbxInterneuronList, 'String'));
-
-    % Set the current channels in each of the rat's conditions.
-    cellChannels = {nRippleWaveChannel, nSharpLowChannel, nSharpHighChannel};
-
-    objRatData.pre.setCurrentChannels(cellChannels{:});
-    objRatData.musc.setCurrentChannels(cellChannels{:});
-    objRatData.post.setCurrentChannels(cellChannels{:});
 
     % Compile a list of all sequences.
     cellSequences = {};
@@ -636,6 +694,7 @@ function btnDetectRipples_Callback(hObject, eventdata, handles)
     % hObject    handle to btnDetectRipples (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
+    detectRipples(handles);
 end
 
 % --- Executes on button press in btnEditEvents.
