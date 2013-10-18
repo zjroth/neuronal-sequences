@@ -1,7 +1,7 @@
 %
 % USAGE:
 %
-%    plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors)
+%    plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors, bCompress)
 %
 % DESCRIPTION:
 %
@@ -29,7 +29,12 @@
 %       A matrix with three columns, each row of which represents an RGB color.
 %       The colors will be used cyclically.
 %
-function plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors)
+%    bCompress (default: `false`)
+%
+%       A boolean. If true, neurons that don't fire in the given time window
+%       will not take up vertical space.
+%
+function plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors, bCompress)
     % Set the default time window to be just as wide as it has to be.
     if nargin < 2 || isempty(vTimeWindow)
         dMinSpike = min(cellfun(@myMin, cellTrains));
@@ -43,8 +48,13 @@ function plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors)
     end
 
     % Set a default coloring scheme.
-    if nargin < 4
+    if nargin < 4 || isempty(mtxColors)
         mtxColors = lines();
+    end
+
+    % By default, we don't want a neuron that doesn't fire to take up any space.
+    if nargin < 5
+        bCompress = false;
     end
 
     % Store the start/end of the ripple window, and store the number of colors
@@ -58,12 +68,16 @@ function plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors)
         vOrdering = (1 : length(cellTrains));
     end
 
-    % Since each train will be plotted individually, we need to tell matlab not
-    % to overwrite what has already been plotted.
+    % Clear the current axes. Also, since each train will be plotted
+    % individually, we need to tell matlab not to overwrite what has already
+    % been plotted.
+    cla();
     hold('on');
 
     % For each neuron's spike train, plot that spike train along a horizontal
     % line.
+    nNumPlotted = 0;
+
     for j = 1 : length(vOrdering)
         % Extract the current neuron number.
         nCurrNeuron = vOrdering(j);
@@ -75,16 +89,18 @@ function plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors)
 
         % The color of this spike train is determined by the actual neuron
         % number, but the height of the plotted spike train is determined by the
-        % index of the current neuron in the ordering.
-        vSpikeColor = mtxColors(mod(nCurrNeuron - 1, nColors) + 1, :);
-        plot(vTrain, j * ones(size(vTrain)), '.', 'Color', vSpikeColor);
+        % number of already-plotted trains.
+        if ~bCompress || ~isempty(vTrain)
+            nNumPlotted = nNumPlotted + 1;
+            vSpikeColor = mtxColors(mod(nCurrNeuron - 1, nColors) + 1, :);
+            plot(vTrain, nNumPlotted * ones(size(vTrain)), '.', 'Color', vSpikeColor);
+        end
     end
 
     % Now that everything has been plotted, tidy up.
     hold('off');
     xlim([dMinTime, dMaxTime]);
-    ylim([0, length(vOrdering) + 1]);
-    set(gca, 'YTick', []);
+    ylim([0, nNumPlotted + 1]);
     set(gca, 'YTickLabel', []);
 end
 
