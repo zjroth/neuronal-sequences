@@ -142,8 +142,6 @@ classdef NeuralData < handle
         trains = getSpikeTrains(this, bRemoveInterneurons)
         plotLfps(this, varargin)
         vNearest = getNearestRipples(this, nRipple)
-        computeRippleSpikeMatrix(this)
-        rippleSpikeMatrix = getRippleSpikeMatrix(this)
 
         activeNeurons = getRippleActivity(this, nRipple)
         nRipples = getRippleCount(this)

@@ -163,10 +163,6 @@ function ripples = detectRipples(this, varargin)
 
     % Finally, convert the ripples from index data to time data.
     this.current.ripples = ripples;
-
-    if isfield(this.current, 'rippleSpikeMatrix')
-        rmfield(this.current, 'rippleSpikeMatrix');
-    end
 end
 
 function ripplesOut = ripplesWithPeaks(ripplesIn, peakIntervals)
