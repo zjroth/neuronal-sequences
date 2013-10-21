@@ -57,28 +57,24 @@ classdef NeuralData < handle
         %
         % ARGUMENTS:
         %
-        %    strFolder
+        %    strPath
         %       The path to the folder in which the data resides. This must
         %       end with a path separator (e.g., `/` on unix systems).
         %
         %---------------------------------------------------------------
-        function this = NeuralData(strFolder)
-            % First, read in the base file name from the meta.txt file. Find
-            % the data on the line that starts with "strBaseFileName = ".
-            strMetaText = fileread(fullfile(strFolder, 'meta.txt'));
-            strBaseFileName = regexp( ...
-                strMetaText, '^strBaseFileName = (.*)$', ...
-                'tokens', 'lineanchors', 'dotexceptnewline');
-            strBaseFileName = strBaseFileName{1}{1};
+        function this = NeuralData(strPath)
+            % First, find the base file name, which should be the same as the
+            % folder's name (i.e., the actual folder, not the entire path).
+            [~, strBaseFileName, ~] = fileparts(strPath);
 
             % Store the folder and base filename in this object.
-            this.baseFolder = strFolder;
+            this.baseFolder = strPath;
             this.baseFileName = strBaseFileName;
 
             % Load and store information about the data in this recording.
             this.BehavElectrDataLFP = ...
-                matfile(fullfile(strFolder, [strBaseFileName ...
-                                '_BehavElectrDataLFP.mat']));
+                load(fullfile(strPath, ...
+                              [strBaseFileName '_BehavElectrDataLFP.mat']));
         end
     end
 
