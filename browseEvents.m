@@ -1,23 +1,31 @@
-% BROWSEEVENTS MATLAB code for browseEvents.fig
-%      BROWSEEVENTS, by itself, creates a new BROWSEEVENTS or raises the existing
-%      singleton*.
 %
-%      H = BROWSEEVENTS returns the handle to a new BROWSEEVENTS or the handle to
-%      the existing singleton*.
+% USAGE:
 %
-%      BROWSEEVENTS('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in BROWSEEVENTS.M with the given input arguments.
+%    mtxModifiedEvents = browseEvents(objNeuralData, mtxEvents)
 %
-%      BROWSEEVENTS('Property','Value',...) creates a new BROWSEEVENTS or raises the
-%      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before browseEvents_OpeningFcn gets called.  An
-%      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to browseEvents_OpeningFcn via varargin.
+% DESCRIPTION:
 %
-%      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
-%      instance to run (singleton)".
+%    Browse (and modify) the supplied list of events
 %
-% See also: GUIDE, GUIDATA, GUIHANDLES
+% ARGUMENTS:
+%
+%    objNeuralData
+%
+%       A `NeuralData` object on which `setCurrentChannels` has been called
+%
+%    mtxEvents
+%
+%       A 2-column matrix of event times in seconds. The first column should
+%       contain starting times, and the second column should contain ending
+%       times.
+%
+% RETURNS:
+%
+%    mtxModifiedEvents
+%
+%       A matrix of the same form as the input `mtxEvents` containing the list
+%       of events once the GUI has been closed
+%
 function varargout = browseEvents(varargin)
     % Edit the above text to modify the response to help browseEvents
 
