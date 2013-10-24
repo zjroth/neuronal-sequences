@@ -17,7 +17,7 @@
 %
 %       A 2-column matrix of event times in seconds. The first column should
 %       contain starting times, and the second column should contain ending
-%       times.
+%       times. This must be nonempty.
 %
 % RETURNS:
 %
@@ -185,6 +185,12 @@ function browseEvents_OpeningFcn(hObject, eventdata, handles, varargin)
     handles.objLfps.Data = bsxfun(@minus, handles.objLfps.Data, ...
                                   mean(handles.objLfps.Data, 1));
     handles.mtxEvents = varargin{2};
+
+    % Ensure that the event matrix has two columns and that there's at least one
+    % event.
+    assert(size(handles.mtxEvents, 2) == 2 && ~isempty(handles.mtxEvents), ...
+           ['The event matrix is not an appropriate size. See `help browseEvents` ' ...
+            'for more information.']);
 
     % Initially, we want to display the first event.
     handles.nCurrentEvent = 1;
