@@ -336,6 +336,12 @@ function btnMoveLeftEdge_Callback(hObject, eventdata, handles)
     % hObject    handle to btnMoveLeftEdge (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
+    axes(handles.axEvent);
+    [x, ~] = ginput(1);
+
+    handles.mtxEvents(handles.nCurrentEvent, 1) = x;
+    guidata(hObject, handles);
+    updateGui(handles);
 end
 
 % --- Executes on button press in btnMoveRightEdge.
@@ -343,6 +349,12 @@ function btnMoveRightEdge_Callback(hObject, eventdata, handles)
     % hObject    handle to btnMoveRightEdge (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
+    axes(handles.axEvent);
+    [x, ~] = ginput(1);
+
+    handles.mtxEvents(handles.nCurrentEvent, 2) = x;
+    guidata(hObject, handles);
+    updateGui(handles);
 end
 
 % --- Executes on button press in btnSplitEvent.
