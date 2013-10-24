@@ -18,8 +18,11 @@
 %
 classdef NeuralData < handle
     properties (GetAccess = public, SetAccess = protected)
-        BehavElectrDataLFP
-        Clu, Laps, Spike, Track, xml
+        Clu = []
+        Laps = []
+        Spike = []
+        Track = []
+        xml = []
 
         smoothingRadius = 0.03;
         ripples
@@ -34,6 +37,8 @@ classdef NeuralData < handle
     end
 
     properties (GetAccess = protected, SetAccess = protected)
+        strBehavElectrDataLFP
+
         baseFolder
         baseFileName
 
@@ -58,46 +63,80 @@ classdef NeuralData < handle
         % ARGUMENTS:
         %
         %    strPath
-        %       The path to the folder in which the data resides. This must
-        %       end with a path separator (e.g., `/` on unix systems).
+        %
+        %       The path to the folder in which the data resides
         %
         %---------------------------------------------------------------
-        function this = NeuralData(strPath)
-            % First, find the base file name, which should be the same as the
-            % folder's name (i.e., the actual folder, not the entire path).
-            [~, strBaseFileName, ~] = fileparts(strPath);
+        function this = NeuralData(strDataPath)
+            % Find the name of the recording.
+            cellFiles = findFiles(strDataPath, '^A\d{1,4}-\d{8}-\d{2}\.dat$');
+
+            assert(length(cellFiles) > 0, ...
+                   ['Please ensure that the data file matches the following ' ...
+                    'regular expression and that all other files start with ' ...
+                    'the same name (sans extension): ' ...
+                    '''^A\d{1,4}-\d{8}-\d{2}\.dat$''']);
+
+            % We've found our data file. Extract the base file name from it.
+            strBaseFileName = cellFiles{1};
+            strBaseFileName = strBaseFileName(1 : end - 4);
 
             % Store the folder and base filename in this object.
-            this.baseFolder = strPath;
+            this.baseFolder = strDataPath;
             this.baseFileName = strBaseFileName;
 
             % Load and store information about the data in this recording.
-            this.BehavElectrDataLFP = ...
-                load(fullfile(strPath, ...
-                              [strBaseFileName '_BehavElectrDataLFP.mat']));
+            this.strBehavElectrDataLFP = ...
+                fullfile(strDataPath, ...
+                         [strBaseFileName '_BehavElectrDataLFP.mat']);
         end
     end
 
     % getters and setters
     methods
         function stctClu = get.Clu(this)
-            stctClu = this.BehavElectrDataLFP.Clu;
+            if isempty(this.Clu)
+                stctContents = load(this.strBehavElectrDataLFP, 'Clu');
+                this.Clu = stctContents.Clu;
+            end
+
+            stctClu = this.Clu;
         end
 
         function stctLaps = get.Laps(this)
-            stctLaps = this.BehavElectrDataLFP.Laps;
+            if isempty(this.Laps)
+                stctContents = load(this.strBehavElectrDataLFP, 'Laps');
+                this.Laps = stctContents.Laps;
+            end
+
+            stctLaps = this.Laps;
         end
 
         function stctSpike = get.Spike(this)
-            stctSpike = this.BehavElectrDataLFP.Spike;
+            if isempty(this.Spike)
+                stctContents = load(this.strBehavElectrDataLFP, 'Spike');
+                this.Spike = stctContents.Spike;
+            end
+
+            stctSpike = this.Spike;
         end
 
         function stctTrack = get.Track(this)
-            stctTrack = this.BehavElectrDataLFP.Track;
+            if isempty(this.Track)
+                stctContents = load(this.strBehavElectrDataLFP, 'Track');
+                this.Track = stctContents.Track;
+            end
+
+            stctTrack = this.Track;
         end
 
         function stctXml = get.xml(this)
-            stctXml = this.BehavElectrDataLFP.xml;
+            if isempty(this.xml)
+                stctContents = load(this.strBehavElectrDataLFP, 'xml');
+                this.xml = stctContents.xml;
+            end
+
+            stctXml = this.xml;
         end
     end
 
