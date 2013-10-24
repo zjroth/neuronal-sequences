@@ -362,4 +362,35 @@ function btnSplitEvent_Callback(hObject, eventdata, handles)
     % hObject    handle to btnSplitEvent (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
+
+    % Retrieve the x value where we want to split.
+    axes(handles.axEvent);
+    [x, ~] = ginput(1);
+
+    % Some convenience variables.
+    mtxEvents = handles.mtxEvents;
+    nCurrentEvent = handles.nCurrentEvent;
+    vEvent = mtxEvents(nCurrentEvent, :);
+
+    % How much time do we want between the newly-created events? Let's go with
+    % 20 milliseconds.
+    dTimeSpacing = 0.001;
+
+    % Ensure that the selected x value lies within the current event.
+    if x <= vEvent(1) + dTimeSpacing || x >= vEvent(2) - dTimeSpacing
+        errordlg('Please select a time within the current event window.');
+    else
+        % First, duplicate the event.
+        mtxEvents = [mtxEvents(1 : nCurrentEvent, :); ...
+                     mtxEvents(nCurrentEvent : end, :)];
+
+        % Now, set the newly-created events' endpoints.
+        mtxEvents(nCurrentEvent, 2) = x - dTimeSpacing;
+        mtxEvents(nCurrentEvent + 1, 1) = x + dTimeSpacing;
+
+        % Save the events to the `handles` object and update the GUI data.
+        handles.mtxEvents = mtxEvents;
+        guidata(hObject, handles);
+        updateGui(handles);
+    end
 end
