@@ -130,6 +130,40 @@ function vWindow = getTimeWindow(handles)
     vWindow = vEvent + [-dPadding, dPadding];
 end
 
+function selectEvent(handles, nEvent)
+    % Select the provided event, rounding to the appropriate range.
+    nNumEvents = size(handles.mtxEvents, 1);
+    handles.nCurrentEvent = max(1, min(nNumEvents, nEvent));
+
+    % Make sure that we update the handles object, and then update the GUI.
+    guidata(handles.figure1, handles)
+    updateGui(handles);
+end
+
+function selectNextEvent(handles)
+    % Make sure that we select an event in the range.
+    nNumEvents = size(handles.mtxEvents, 1);
+    nCurrentEvent = handles.nCurrentEvent;
+
+    if nCurrentEvent == nNumEvents
+        selectEvent(handles, 1);
+    else
+        selectEvent(handles, nCurrentEvent + 1);
+    end
+end
+
+function selectPreviousEvent(handles)
+    % Make sure that we select an event in the range.
+    nNumEvents = size(handles.mtxEvents, 1);
+    nCurrentEvent = handles.nCurrentEvent;
+
+    if nCurrentEvent == 1
+        selectEvent(handles, nNumEvents);
+    else
+        selectEvent(handles, nCurrentEvent - 1);
+    end
+end
+
 % --- Executes just before browseEvents is made visible.
 function browseEvents_OpeningFcn(hObject, eventdata, handles, varargin)
     % This function has no output args, see OutputFcn.
@@ -239,6 +273,7 @@ function btnPreviousEvent_Callback(hObject, eventdata, handles)
     % hObject    handle to btnPreviousEvent (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
+    selectPreviousEvent(handles);
 end
 
 % --- Executes on button press in btnNextEvent.
@@ -246,6 +281,7 @@ function btnNextEvent_Callback(hObject, eventdata, handles)
     % hObject    handle to btnNextEvent (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
+    selectNextEvent(handles);
 end
 
 function tbxJumpToEvent_Callback(hObject, eventdata, handles)
@@ -255,6 +291,15 @@ function tbxJumpToEvent_Callback(hObject, eventdata, handles)
 
     % Hints: get(hObject,'String') returns contents of tbxJumpToEvent as text
     %        str2double(get(hObject,'String')) returns contents of tbxJumpToEvent as a double
+
+    % Retrieve the input.
+    strInput = get(hObject, 'String');
+
+    if all(isstrprop(strInput, 'digit'))
+        selectEvent(handles, str2double(strInput));
+    else
+        errordlg('Please enter a valid event number');
+    end
 end
 
 % --- Executes during object creation, after setting all properties.
