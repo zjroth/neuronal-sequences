@@ -58,9 +58,9 @@ function updateGui(handles)
     vTimeWindow = getTimeWindow(handles);
 
     % Plot the main ripple events over the LFP-triple.
+    cla(handles.axEvent);
     objLocalLfps = subseries(handles.objLfps, vTimeWindow(1), vTimeWindow(2));
     plot(handles.axEvent, objLocalLfps.Time, objLocalLfps.Data);
-    PlotIntervals(vEvent, 'rectangles');
 
     % Set plot niceties.
     set(handles.axEvent, 'Layer', 'top');
@@ -70,6 +70,8 @@ function updateGui(handles)
     xlabel(handles.axEvent, 'Time (seconds)');
     xlim(vTimeWindow);
     set(handles.axEvent, 'Color', [1, 1, 1]);
+
+    PlotIntervals(vEvent, 'rectangles');
 
     % % For each of the provided orderings, create plots of the associated spike
     % % trains and activity patterns.
@@ -134,6 +136,10 @@ function selectEvent(handles, nEvent)
     % Select the provided event, rounding to the appropriate range.
     nNumEvents = size(handles.mtxEvents, 1);
     handles.nCurrentEvent = max(1, min(nNumEvents, nEvent));
+
+    % Display which event we're currently viewing.
+    set(handles.lblCurrentEvent, 'String', ...
+        ['Viewing ' num2str(handles.nCurrentEvent) ' of ' num2str(nNumEvents)]);
 
     % Make sure that we update the handles object, and then update the GUI.
     guidata(handles.figure1, handles)
@@ -230,6 +236,7 @@ function tbxEventPadding_Callback(hObject, eventdata, handles)
 
     % Hints: get(hObject,'String') returns contents of tbxEventPadding as text
     %        str2double(get(hObject,'String')) returns contents of tbxEventPadding as a double
+    updateGui(handles);
 end
 
 % --- Executes during object creation, after setting all properties.
@@ -253,6 +260,7 @@ function pbxEventPaddingUnits_Callback(hObject, eventdata, handles)
 
     % Hints: contents = cellstr(get(hObject,'String')) returns pbxEventPaddingUnits contents as cell array
     %        contents{get(hObject,'Value')} returns selected item from pbxEventPaddingUnits
+    updateGui(handles);
 end
 
 % --- Executes during object creation, after setting all properties.
@@ -295,6 +303,7 @@ function tbxJumpToEvent_Callback(hObject, eventdata, handles)
     % Retrieve the input.
     strInput = get(hObject, 'String');
 
+    % Ensure that the user enters a valid integer.
     if all(isstrprop(strInput, 'digit'))
         selectEvent(handles, str2double(strInput));
     else
