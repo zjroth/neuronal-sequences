@@ -41,6 +41,7 @@ classdef NeuralData < handle
 
         baseFolder
         baseFileName
+        cachePath
 
         currentChannels = []
         currentLfps = []
@@ -67,7 +68,7 @@ classdef NeuralData < handle
         %       The path to the folder in which the data resides
         %
         %---------------------------------------------------------------
-        function this = NeuralData(strDataPath)
+        function this = NeuralData(strDataPath, strCachePath)
             % Find the name of the recording.
             cellFiles = findFiles(strDataPath, '^A\d{1,4}-\d{8}-\d{2}\.dat$');
 
@@ -77,6 +78,9 @@ classdef NeuralData < handle
                     'the same name (sans extension): ' ...
                     '''^A\d{1,4}-\d{8}-\d{2}\.dat$''']);
 
+            assert(logical(exist(strCachePath, 'dir')), ...
+                   'Please ensure that the cache is a valid directory');
+
             % We've found our data file. Extract the base file name from it.
             strBaseFileName = cellFiles{1};
             strBaseFileName = strBaseFileName(1 : end - 4);
@@ -84,6 +88,7 @@ classdef NeuralData < handle
             % Store the folder and base filename in this object.
             this.baseFolder = strDataPath;
             this.baseFileName = strBaseFileName;
+            this.cachePath = strCachePath;
 
             % Load and store information about the data in this recording.
             this.strBehavElectrDataLFP = ...
