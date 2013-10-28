@@ -92,6 +92,7 @@ function hndl = plotRipple(this, nRipple, varargin)
          'Width: ' num2str((ripple(3) - ripple(1)) * 1000) ' ms----------']);
 
     lfpTriple = getLfps(this);
+    lfpTriple.Data = bsxfun(@minus, lfpTriple.Data, mean(lfpTriple.Data, 1));
 
     % Plot the main ripple events over the LFP-triple.
     h(1) = subplot(nPlotRows, nPlotCols, (1 : nPlotCols));
@@ -104,7 +105,7 @@ function hndl = plotRipple(this, nRipple, varargin)
     % Set plot niceties.
     xticklabels = get(gca, 'XTickLabel');
     set(gca, 'Layer', 'top', 'XTickLabel', {[]});
-    legend('Low', 'Main', 'High');
+    legend('Main', 'Low', 'High');
     title(['LFPs and Ripple Event ' num2str(nRipple)]);
     ylabel('');
     xlim(timeWindow);
@@ -133,9 +134,8 @@ function hndl = plotRipple(this, nRipple, varargin)
         % Plot the spike trains.
         vSubplotLocs = i * nPlotCols + (1 : nPlotCols);
         h(i + 1) = subplot(nPlotRows, nPlotCols, vSubplotLocs);
-        plotSpikeTrains(this, ripple, spikeTrains(ordering), timeWindow, ...
-            colors, 'plotTitle', orderingDesc, 'neuronNumbers', ordering);
-        % set(gca, 'XTickLabel', {[]});
+        plotSpikeTrains(spikeTrains, ripple([1, 3]), ordering, colors);
+        title(orderingDesc);
     end
 
     set(h(end), 'XTickLabelMode', 'auto')
