@@ -149,7 +149,7 @@ classdef NeuralData < handle
     methods (Access = public)
         cellSpikeTimes = groupSpikes(this)
 
-        loadChannels(this)
+        loadChannels(this, nMain, nLow, nHigh)
 
         objLfps = getLfps(this)
         [lfp, ch] = mainLfp(this, indices)

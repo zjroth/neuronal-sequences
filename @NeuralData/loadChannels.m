@@ -1,32 +1,64 @@
-% function loadChannels(this)
-function loadChannels(this)
+%
+% USAGE:
+%
+%    loadChannels(this, nMain, nLow, nHigh)
+%
+% DESCRIPTION:
+%
+%    Load the specified LFP channels into memory
+%
+% ARGUMENTS:
+%
+%    nMain, nLow, nHigh (optional)
+%
+%       Integers specifying the 1-indexed LFP channels to load. If any of these
+%       is specified, all must be specified. See `NeuralData.setCurrentChannels`
+%       for more information.
+%
+% NOTES:
+%
+%    If LFP channels are not specified, then the method `setCurrentChannels`
+%    must be invoked first.
+%
+function loadChannels(this, nMain, nLow, nHigh)
+    if nargin == 4
+        this.setCurrentChannels(nMain, nLow, nHigh);
+    end
+
     % The set of current channels must be set before calling this function.
     assert(~isempty(this.currentChannels), ...
-           ['method `setCurrentChannels` must be called before ' ...
-            'invoking `loadChannels`']);
+           ['A collection of channels must be specified. Use ' ...
+            '`setCurrentChannels` or the additional arguments to ' ...
+            '`loadChannels` to do this.']);
 
     % Use the FMA toolbox to load the binary data.
-    datFileName = fullfile(this.baseFolder, [this.baseFileName '.dat']);
+    strDataFile = fullfile(this.baseFolder, [this.baseFileName '.dat']);
 
     this.currentLfps = [];
+
+    % Ensure that the folder that we're going to be saving to exists.
+    strLfpCacheDir = fullfile(this.cachePath, this.baseFileName, 'lfps');
+
+    if ~exist(strLfpCacheDir, 'dir')
+        mkdir(strLfpCacheDir);
+    end
 
     % Load each of the channels
     for i = 1 : 3
         % Each channel must be extracted from the data, which is an expensive
         % operation. So, when a channel is extracted, the extracted data is
         % saved to a separate file. Set the name of the file here.
-        strFilename = fullfile(      ...
-            this.baseFolder, 'lfps', ...
-            ['ch' num2str(this.currentChannels(i)) '.mat']);
+        strFilename = fullfile( ...
+            strLfpCacheDir, ['ch' num2str(this.currentChannels(i)) '.mat']);
 
         % If the file already exists, simply load the data from that file.
         if exist(strFilename, 'file')
-            load(strFilename, 'lfp');
-            this.currentLfps(:, i) = lfp;
-            clear('lfp');
+            stctFileContents = load(strFilename, 'lfp');
+            this.currentLfps(:, i) = stctFileContents.lfp;
+            clear('stctFileContents');
         else
             % ...otherwise, extract the data and save it to a file.
-            lfp = LoadBinary(datFileName,            ...
+            lfp = LoadBinary(strDataFile,            ...
                 'nChannels', this.numDataChannels(), ...
                 'channels', this.currentChannels(i));
 
