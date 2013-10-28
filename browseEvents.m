@@ -32,7 +32,7 @@ function varargout = browseEvents(varargin)
     % Last Modified by GUIDE v2.5 24-Oct-2013 14:36:25
 
     % Begin initialization code - DO NOT EDIT
-    gui_Singleton = 1;
+    gui_Singleton = 0;
     gui_State = struct('gui_Name',       mfilename, ...
                        'gui_Singleton',  gui_Singleton, ...
                        'gui_OpeningFcn', @browseEvents_OpeningFcn, ...
@@ -185,6 +185,7 @@ function browseEvents_OpeningFcn(hObject, eventdata, handles, varargin)
     handles.objLfps.Data = bsxfun(@minus, handles.objLfps.Data, ...
                                   mean(handles.objLfps.Data, 1));
     handles.mtxEvents = varargin{2};
+    handles.output = hObject;
 
     % Ensure that the event matrix has two columns and that there's at least one
     % event.
@@ -202,7 +203,7 @@ function browseEvents_OpeningFcn(hObject, eventdata, handles, varargin)
     updateGui(handles);
 
     % UIWAIT makes browseEvents wait for user response (see UIRESUME)
-    uiwait(handles.figure1);
+    %uiwait(handles.figure1);
 end
 
 % --- Executes when user attempts to close figure1.
@@ -229,10 +230,10 @@ function varargout = browseEvents_OutputFcn(hObject, eventdata, handles)
     % handles    structure with handles and user data (see GUIDATA)
 
     % Get default command line output from handles structure
-    varargout{1} = handles.mtxEvents;
+    varargout{1} = handles.output; %handles.mtxEvents;
 
     % The figure can be deleted now
-    delete(handles.figure1);
+    %delete(handles.figure1);
 end
 
 function tbxEventPadding_Callback(hObject, eventdata, handles)
