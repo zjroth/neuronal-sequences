@@ -44,6 +44,9 @@
 %    minSecondDerivative (default: 3)
 %       .
 %
+%    dMinSmoothedSpike (default: 0)
+%       .
+%
 % RETURNS:
 %
 %    ripples
@@ -66,6 +69,8 @@ function ripples = detectRipples(this, varargin)
 
     minFirstDerivative = 2.75;
     minSecondDerivative = 2.9;
+
+    dMinSmoothedSpike = 0;
 
     %=======================================================================
     % Initialization and value-checking
@@ -95,39 +100,23 @@ function ripples = detectRipples(this, varargin)
     % Actual computations
     %=======================================================================
 
-    % Find the first and second derivatives of the sharp-wave.
-    firstDerivative = [0; diff(vSharpWave)] * sampleRate(this);
-    firstDerivative = firstDerivative / std(firstDerivative);
+    % Find the first and second derivatives of the sharp-wave. Smoothing here
+    % is important for the second derivative since it is used to split events
+    % in to multiple events by considering its peaks.
+    firstDerivative = zscore(conv([0; diff(vSharpWave)], ...
+                                  gaussfilt(100, 5), 'same'));
+    secondDerivative = zscore(conv([0; diff(firstDerivative)], ...
+                                   gaussfilt(100, 5), 'same'));
 
-    secondDerivative = [0; diff(firstDerivative)] * sampleRate(this);
-    secondDerivative = secondDerivative / std(secondDerivative);
+    % Our initial guess for where ripples are occuring will be based solely on
+    % thresholding the sharp-wave signal.
+    rippleIntervals = getIntervals(vSharpWave >= minSharpWave);
 
-    % Now that we have the necessary signals, we can determine intervals in
-    % which the peak of a ripple might be occuring by thresholding the signals
-    % with the provided thresholds.
-    ripplePeakIntervals = getIntervals(  ...
-        (vSharpWave > minSharpWavePeak) & ...
-        (vRippleWave > minRippleWavePeak));
-
-    % In addition to the intervals in which ripple peaks may occur, we also need
-    % to determine (initial estimates for) intervals during which an entire
-    % ripple may be occuring.
-    rippleIntervals = getIntervals(   ...
-        (vSharpWave >= minSharpWave) & ...
-        (vRippleWave >= minRippleWave));
-
-    % Fill in the gaps. We will split ripples that are too long later.
-    %rippleIntervals = fillGaps(rippleIntervals, minSeparation / 2);
-
-    % Only consider those intervals that are long enough.
+    % The above thresholding likely detected lots of very short event intervals.
+    % Remove events that are too short (which we do now to speed up later
+    % processing).
     rippleIntervals = rippleIntervals( ...
         rippleIntervals(:, 2) - rippleIntervals(:, 1) >= minDuration, :);
-
-    % In addition to requiring the sharp-wave to be above a certain
-    % threshold, we will also require that it increases sharply during the
-    % course of the ripple, thus forming the "envelope" or "packet" that
-    % characterizes the look of these events.
-    highDerivatives = find(firstDerivative > minFirstDerivative);
 
     % Now that we have the necessary intervals to consider, we want to classify
     % those events as ripples or not ripples. Initially, we say that each ripple
@@ -137,32 +126,70 @@ function ripples = detectRipples(this, varargin)
         rippleIntervals(:, 1), rippleIntervals(:, 2));
     ripples = [rippleIntervals(:, 1), ripplePeaks, rippleIntervals(:, 2)];
 
-    % Split the ripples.
+    % Split the ripples where there's a high second derivative in the sharp wave
+    % signal.
     secondDerivativePeaks = findpeaks(secondDerivative);
     splitPoints = secondDerivativePeaks.loc;
     splitPointVals = secondDerivative(splitPoints);
     splitPoints = splitPoints(splitPointVals > minSecondDerivative);
     ripples = splitRipples(ripples, vSharpWave, splitPoints);
 
-    % Keep only those ripples that have high enough peaks in the sharp-wave
-    % signal and in its first derivative.
-    ripples = ripplesWithPeaks(ripples, ripplePeakIntervals);
-    ripples = ripplesWithSharpChange(ripples, highDerivatives);
-
-    % Shorten any ripples that are too long.
+    % Remove short ripples (which could have been reintroduced by splitting
+    % events), and shorten long ones.
+    ripples = ripples(ripples(:, 3) - ripples(:, 1) >= minDuration, :);
     ripples = shortenRipples(ripples, maxDuration);
 
-%    % Correct adjacent ripples (that are too close).
-%    ripples = correctAdjacent(ripples, minSeparation);
+    % Ensure that each ripple satisfies the following conditions.
+    vSharpWaveAboveMaxThresh = (vSharpWave > minSharpWavePeak);
+    vRippleWaveAboveMaxThresh = (vRippleWave > minRippleWavePeak);
+    vFirstDerivativeAboveThresh = (abs(firstDerivative) > minFirstDerivative);
 
-    % Remove ripples that are too short.
-    ripples = ripples(ripples(:, 3) - ripples(:, 1) >= minDuration, :);
+    vSatisfiesSharpWaveThresh = ...
+        maxInIntervals(vSharpWaveAboveMaxThresh, ripples(:, [1, 3]));
+    vSatisfiesRippleWaveThresh = ...
+        maxInIntervals(vRippleWaveAboveMaxThresh, ripples(:, [1, 3]));
+    vSatisfiesFirstDerivativeThresh = ...
+        maxInIntervals(vFirstDerivativeAboveThresh, ripples(:, [1, 3]));
 
-    % Store these events in this object.
+    ripples = ripples(vSatisfiesSharpWaveThresh ...
+                      & vSatisfiesRippleWaveThresh ...
+                      & vSatisfiesFirstDerivativeThresh, :);
+
+    % Filter out those ripples that don't contain enough spiking.
+    ripples = ripplesWithHighSpiking(this, ripples, dMinSmoothedSpike, ...
+                                     objRippleWave);
+
+    % Convert the ripples from index data to time data and store them in this
+    % object.
     ripples = (ripples - 1) / sampleRate(this) + objRippleWave.Time(1);
-
-    % Finally, convert the ripples from index data to time data.
     this.current.ripples = ripples;
+end
+
+function mtxRipplesOut = ripplesWithHighSpiking(this, mtxRipplesIn, dMin, ...
+                                                objRippleWave)
+    % Retrieve the spikes and bin them by firing time. Then smooth the resultant
+    % signal.
+    vSpikeCounts = full(computeN(this.Spike.res, length(this.Track.eeg)));
+    vSpikeWave = conv(vSpikeCounts, gaussfilt(100, 5), 'same');
+
+    objSpikeWave = TimeSeries( ...
+        vSpikeWave, (0 : length(this.Track.eeg) - 1) ./ sampleRate(this));
+    objSpikeWave = subseries(objSpikeWave, objRippleWave.Time(1), ...
+                             objRippleWave.Time(end));
+
+    % Keep only those intervals in which the smoothed spike signal is high
+    % enough.
+    vMaxes = maxInIntervals(objSpikeWave.Data, mtxRipplesIn(:, [1, 3]));
+    mtxRipplesOut = mtxRipplesIn(vMaxes >= dMin, :);
+end
+
+function vMaxes = maxInIntervals(vFunction, mtxIntervals)
+    nIntervals = size(mtxIntervals, 1);
+    vMaxes = zeros(nIntervals, 1);
+
+    for i = 1 : nIntervals
+        vMaxes(i) = max(vFunction(mtxIntervals(i, 1) : mtxIntervals(i, 2)));
+    end
 end
 
 function ripplesOut = ripplesWithPeaks(ripplesIn, peakIntervals)
