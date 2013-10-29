@@ -33,6 +33,7 @@ function objRippleWave = getRippleWave(this, varargin)
 
         % Smooth the signal.
         filter = gaussfilt(2 * round(this.smoothingRadius * sampleRate(this)) + 1);
+        rippleWave = zscore(conv(rippleWave, filter, 'same'));
         this.current.rippleWave = TimeSeries(rippleWave, rippleWaveTimes);
     end
 
