@@ -57,21 +57,27 @@ function [spect, spectTimes, spectFrequencies] = getRippleSpectrogram(this, vara
     % Actual computations
     %=======================================================================
 
+    % Ensure that the folder that we're going to be saving to exists.
+    strSpectrogramCacheDir = fullfile(this.cachePath, this.baseFileName, 'spectrograms');
+
+    if ~exist(strSpectrogramCacheDir, 'dir')
+        mkdir(strSpectrogramCacheDir);
+    end
+
     % If this has been called before with the same parameters, then the data
     % should already be saved somewhere. Construct the filename here.
     [lfp, channel] = mainLfp(this);
-    spectFolder = fullfile(this.baseFolder, 'computed', 'spects');
     spectFile = [                                                                ...
         'ch' num2str(channel) '-'                                                ...
         'range-' num2str(frequencyRange(1)) '-' num2str(frequencyRange(2)) 'Hz-' ...
         'window-' num2str(1000 * windowWidth) 'ms-'                              ...
         'rate-' num2str(sampleRate) 'Hz'                                         ...
         '.mat'];
-    filename = fullfile(spectFolder, spectFile);
+    strSpectFilePath = fullfile(strSpectrogramCacheDir, spectFile);
 
     % If the file already exists, simply load the data to be returned.
-    if exist(filename, 'file')
-        load(filename, 'spect', 'spectTimes', 'spectFrequencies');
+    if exist(strSpectFilePath, 'file')
+        load(strSpectFilePath, 'spect', 'spectTimes', 'spectFrequencies');
     else
         % ...otherwise, compute the short-time Fourier transforms for the
         % desired frequencies.
@@ -94,8 +100,9 @@ function [spect, spectTimes, spectFrequencies] = getRippleSpectrogram(this, vara
 
         % Save this data so that we don't have to recompute this spectrogram in
         % the future.
-        save(filename, 'frequencyRange', 'channel', 'spect', 'spectTimes', ...
-            'spectFrequencies', 'windowWidth', 'sampleRate', '-v7.3');
+        save(strSpectFilePath, 'frequencyRange', 'channel', 'spect', ...
+             'spectTimes', 'spectFrequencies', 'windowWidth', 'sampleRate', ...
+             '-v7.3');
     end
 
     this.current.spectrogram = spect;
