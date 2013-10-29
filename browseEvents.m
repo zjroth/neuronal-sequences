@@ -336,6 +336,8 @@ function btnRemoveEvent_Callback(hObject, eventdata, handles)
     % hObject    handle to btnRemoveEvent (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
+    handles.mtxEvents(handles.nCurrentEvent, :) = [];
+    selectEvent(handles, handles.nCurrentEvent);
 end
 
 % --- Executes on button press in btnMoveLeftEdge.
