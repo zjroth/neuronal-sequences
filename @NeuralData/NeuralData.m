@@ -202,5 +202,7 @@ classdef NeuralData < handle
 
         detectInterneurons(this)
         vInterneurons = getInterneurons(this)
+
+        dDuration = getRecordingDuration(this)
     end
 end
