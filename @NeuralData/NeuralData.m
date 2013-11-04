@@ -205,5 +205,6 @@ classdef NeuralData < handle
 
         dDuration = getRecordingDuration(this)
         mtxLocations = getSpikeLocations(this)
+        vPoint = getLocationsAtTime(this, dTime, strUnits)
     end
 end
