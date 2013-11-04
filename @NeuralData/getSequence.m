@@ -1,8 +1,33 @@
-% vSequence = getSequence(this, vTimeWindow, varargin)
-function vSequence = getSequence(this, vTimeWindow, varargin)
-    % Parse the named parameters.
-    removeInterneurons = false;
-    parseNamedParams();
+%
+% USAGE:
+%
+%    vSequence = getSequence(this, vTimeWindow, bRemoveInterneurons)
+%
+% DESCRIPTION:
+%
+%    Get the sequence of neuron firings in the given time window
+%
+% ARGUMENTS:
+%
+%    vTimeWindow
+%
+%       The time window from which to extract a sequence
+%
+%    bRemoveInterneurons (default: true)
+%
+%       A boolean specifying whether the returned sequence should contain
+%       interneurons
+%
+% RETURNS:
+%
+%    vSequence
+%
+%       The desired sequence of firings
+%
+function vSequence = getSequence(this, vTimeWindow, bRemoveInterneurons)
+    if nargin < 3
+        bRemoveInterneurons = true;
+    end
 
     % Figure out the min/max index corresponding to the time window.
     nMinIndex = vTimeWindow(1) * sampleRate(this);
@@ -21,7 +46,7 @@ function vSequence = getSequence(this, vTimeWindow, varargin)
     % Remove interneurons from this sequence if requested. This is only possible
     % if this object contains the appropriate reference to identified
     % interneurons.
-    if removeInterneurons
+    if bRemoveInterneurons
         vInterneurons = getInterneurons(this);
 
         for i = 1 : length(vInterneurons)
