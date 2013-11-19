@@ -44,7 +44,7 @@
 %    minSecondDerivative (default: 3)
 %       .
 %
-%    dMinSmoothedSpike (default: 0)
+%    dMinSpikeRate (default: 0)
 %       .
 %
 % RETURNS:
@@ -70,7 +70,7 @@ function [ripples, stctIntermediate] = detectRipples(this, varargin)
     minFirstDerivative = 2.75;
     minSecondDerivative = 2.9;
 
-    dMinSmoothedSpike = 0;
+    dMinSpikeRate = 0;
 
     %=======================================================================
     % Initialization and value-checking
@@ -142,7 +142,6 @@ function [ripples, stctIntermediate] = detectRipples(this, varargin)
     % Ensure that each ripple satisfies the following conditions.
     vSharpWaveAboveMaxThresh = (vSharpWave > minSharpWavePeak);
     vFirstDerivativeAboveThresh = (firstDerivative > minFirstDerivative);
-    vSpikeWaveAboveThresh = (vSpikeWave >= dMinSmoothedSpike);
 
     if minRippleWavePeak > -Inf
         % The ripple-wave is expensive to compute and expensive to load if it
@@ -160,8 +159,9 @@ function [ripples, stctIntermediate] = detectRipples(this, varargin)
         maxInIntervals(vRippleWaveAboveMaxThresh, ripples(:, [1, 3]));
     vSatisfiesFirstDerivativeThresh = ...
         maxInIntervals(vFirstDerivativeAboveThresh, ripples(:, [1, 3]));
-    vSatisfiesSpikeWaveThresh = ...
-        maxInIntervals(vSpikeWaveAboveThresh, ripples(:, [1, 3]));
+    vSatisfiesMinSpikeCount = ...
+        spikeRateInIntervals(vSpikeWave, ripples(:, [1, 3])) ...
+        >= (dMinSpikeRate / sampleRate(this));
 
     % If a second output argument was requested, build a structure containing
     % information about intermediate steps of the detection process.
@@ -170,14 +170,14 @@ function [ripples, stctIntermediate] = detectRipples(this, varargin)
         stctIntermediate.hasMinFirstDerivative = vSatisfiesFirstDerivativeThresh;
         stctIntermediate.hasMinRippleWave = vSatisfiesRippleWaveThresh;
         stctIntermediate.hasMinSharpWave = vSatisfiesSharpWaveThresh;
-        stctIntermediate.hasMinSpikeWave = vSatisfiesSpikeWaveThresh;
+        stctIntermediate.hasMinSpikeCount = vSatisfiesMinSpikeCount;
     end
 
     % Keep only those ripples that satisfy all of the thresholds.
     ripples = ripples(vSatisfiesSharpWaveThresh ...
                       & vSatisfiesRippleWaveThresh ...
                       & vSatisfiesFirstDerivativeThresh ...
-                      & vSatisfiesSpikeWaveThresh, :);
+                      & vSatisfiesMinSpikeCount, :);
 
     % Convert the ripples from index data to time data and store them in this
     % object.
@@ -187,6 +187,14 @@ end
 
 function vSpikes = getSpikeTimes(this)
     vSpikes = col(this.getSpike('res'));
+    vTotclu = this.getSpike('totclu');
+    vInterneurons = this.getInterneurons();
+
+    for i = 1 : length(vInterneurons)
+        vToRemove = (vTotclu == vInterneurons(i));
+        vSpikes(vToRemove) = [];
+        vTotclu(vToRemove) = [];
+    end
 end
 
 function objSpikeWave = getSpikeWave(this, objSharpWave)
@@ -195,8 +203,7 @@ function objSpikeWave = getSpikeWave(this, objSharpWave)
     nSamples = length(this.getTrack('eeg'));
     vSpikes = getSpikeTimes(this);
     vSpikeCounts = accumarray(vSpikes, 1, [nSamples, 1]);
-    vSpikeWave = conv(vSpikeCounts, gaussfilt(100, 5), 'same');
-    vSpikeWave = zscore(vSpikeWave);
+    vSpikeWave = vSpikeCounts;
 
     objSpikeWave = TimeSeries( ...
         vSpikeWave, (0 : nSamples - 1) ./ sampleRate(this));
@@ -204,13 +211,26 @@ function objSpikeWave = getSpikeWave(this, objSharpWave)
                              objSharpWave.Time(end));
 end
 
-function vMaxes = maxInIntervals(vFunction, mtxIntervals)
+function vOut = applyInIntervals(fcnApply, vValues, mtxIntervals)
     nIntervals = size(mtxIntervals, 1);
-    vMaxes = zeros(nIntervals, 1);
+    vOut = zeros(nIntervals, 1);
 
     for i = 1 : nIntervals
-        vMaxes(i) = max(vFunction(mtxIntervals(i, 1) : mtxIntervals(i, 2)));
+        vOut(i) = fcnApply(vValues(mtxIntervals(i, 1) : mtxIntervals(i, 2)));
     end
+end
+
+function vRates = spikeRateInIntervals(vSpikeWave, mtxIntervals)
+    vCounts = countSpikesInIntervals(vSpikeWave, mtxIntervals);
+    vRates = vCounts ./ diff(mtxIntervals, 1, 2);
+end
+
+function vCounts = countSpikesInIntervals(vSpikeWave, mtxIntervals)
+    vCounts = applyInIntervals(@sum, vSpikeWave, mtxIntervals);
+end
+
+function vMaxes = maxInIntervals(vFunction, mtxIntervals)
+    vMaxes = applyInIntervals(@max, vFunction, mtxIntervals);
 end
 
 function ripplesOut = splitRipples(ripplesIn, sharpWave, splitPoints)
