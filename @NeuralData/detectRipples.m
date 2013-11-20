@@ -171,6 +171,14 @@ function [ripples, stctIntermediate] = detectRipples(this, varargin)
         stctIntermediate.hasMinRippleWave = vSatisfiesRippleWaveThresh;
         stctIntermediate.hasMinSharpWave = vSatisfiesSharpWaveThresh;
         stctIntermediate.hasMinSpikeWave = vSatisfiesSpikeWaveThresh;
+
+        stctIntermediate.aboveSharpWaveThresh = vSharpWaveAboveMaxThresh;
+        stctIntermediate.aboveFirstDerivThresh = vFirstDerivativeAboveThresh;
+        stctIntermediate.aboveSpikeWaveThresh = vSpikeWaveAboveThresh;
+        stctIntermediate.aboveRippleWaveThresh = vRippleWaveAboveMaxThresh;
+
+        stctIntermediate.firstDerivative = firstDerivative;
+        stctIntermediate.secondDerivative = secondDerivative;
     end
 
     % Keep only those ripples that satisfy all of the thresholds.
