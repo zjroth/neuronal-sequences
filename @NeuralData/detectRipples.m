@@ -141,7 +141,7 @@ function [ripples, stctIntermediate] = detectRipples(this, varargin)
 
     % Ensure that each ripple satisfies the following conditions.
     vSharpWaveAboveMaxThresh = (vSharpWave > minSharpWavePeak);
-    vFirstDerivativeAboveThresh = (firstDerivative > minFirstDerivative);
+    vFirstDerivativeAboveThresh = (abs(firstDerivative) > minFirstDerivative);
     vSpikeWaveAboveThresh = (vSpikeWave >= dMinSmoothedSpike);
 
     if minRippleWavePeak > -Inf
