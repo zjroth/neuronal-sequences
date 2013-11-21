@@ -39,8 +39,9 @@ function vSequence = getSequence(this, vTimeWindow, bRemoveInterneurons)
     % with respect to their corresponding indices. Next, the actual neuron that
     % spiked is stored in `this.Spike.totclu`; retrieve this list in the order
     % sorted by spike times.
-    vIndices = find(nMinIndex < this.Spike.res & this.Spike.res < nMaxIndex);
-    [~, vOrder] = sort(this.Spike.res(vIndices));
+    vRes = this.getSpike('res');
+    vIndices = find(nMinIndex < vRes & vRes < nMaxIndex);
+    [~, vOrder] = sort(vRes(vIndices));
     vSequence = this.Spike.totclu(vIndices(vOrder));
 
     % Remove interneurons from this sequence if requested. This is only possible

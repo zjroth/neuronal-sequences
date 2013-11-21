@@ -1,4 +1,4 @@
 % rate = sampleRate(this)
 function rate = sampleRate(this)
-    rate = this.xml.lfpSampleRate;
+    rate = this.getXml('lfpSampleRate');
 end

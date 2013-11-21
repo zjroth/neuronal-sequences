@@ -85,7 +85,8 @@ function hndl = plotRipple(this, nRipple, varargin)
     clf();
 
     % Set the window's title.
-    speed = this.Track.speed_MMsec(round(ripple(2) * sampleRate(this)));
+    vSpeed = this.getTrack('speed_MMsec');
+    speed = vSpeed(round(ripple(2) * sampleRate(this)));
     set(gcf, 'name', ...
         ['----------Ripple ' num2str(nRipple) '----------' ...
          'Speed: ' num2str(speed) ' mm/sec----------' ...

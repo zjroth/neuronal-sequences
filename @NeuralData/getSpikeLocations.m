@@ -15,5 +15,5 @@
 %       coordinates being stored in the first and second columns, respectively.
 %
 function mtxLocations = getSpikeLocations(this)
-    mtxLocations = [this.Spike.xMM, this.Spike.yMM];
+    mtxPoints = [this.getSpike('xMM'), this.getSpike('yMM')];
 end

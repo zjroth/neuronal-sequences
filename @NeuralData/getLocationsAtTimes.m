@@ -38,5 +38,7 @@ function mtxPoints = getLocationsAtTimes(this, vTimes, strUnits)
         vIndex = vTimes;
     end
 
-    mtxPoints = [this.Track.xMM(vIndex), this.Track.yMM(vIndex)];
+    vX = this.getTrack('xMM');
+    vY = this.getTrack('yMM');
+    mtxPoints = [vX(vIndex), vY(vIndex)];
 end

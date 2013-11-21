@@ -98,50 +98,82 @@ classdef NeuralData < handle
     end
 
     % getters and setters
-    methods
-        function stctClu = get.Clu(this)
+    methods (Access = public)
+        function uknOut = getClu(this, strField)
             if isempty(this.Clu)
                 stctContents = load(this.strBehavElectrDataLFP, 'Clu');
                 this.Clu = stctContents.Clu;
             end
 
-            stctClu = this.Clu;
+            if nargin == 2
+                uknOut = this.Clu.(strField);
+            else
+                uknOut = this.Clu;
+            end
         end
 
-        function stctLaps = get.Laps(this)
+        function uknOut = getLaps(this, strField)
             if isempty(this.Laps)
                 stctContents = load(this.strBehavElectrDataLFP, 'Laps');
                 this.Laps = stctContents.Laps;
             end
 
-            stctLaps = this.Laps;
+            if nargin == 2
+                uknOut = this.Laps.(strField);
+            else
+                uknOut = this.Laps;
+            end
         end
 
-        function stctSpike = get.Spike(this)
+        function uknOut = getSpike(this, strField)
             if isempty(this.Spike)
                 stctContents = load(this.strBehavElectrDataLFP, 'Spike');
                 this.Spike = stctContents.Spike;
             end
 
-            stctSpike = this.Spike;
+            if nargin == 2
+                uknOut = this.Spike.(strField);
+            else
+                uknOut = this.Spike;
+            end
         end
 
-        function stctTrack = get.Track(this)
+        function uknOut = getTrack(this, strField)
             if isempty(this.Track)
                 stctContents = load(this.strBehavElectrDataLFP, 'Track');
                 this.Track = stctContents.Track;
             end
 
-            stctTrack = this.Track;
+            if nargin == 2
+                uknOut = this.Track.(strField);
+            else
+                uknOut = this.Track;
+            end
         end
 
-        function stctXml = get.xml(this)
+        function uknOut = getXml(this, strField)
             if isempty(this.xml)
                 stctContents = load(this.strBehavElectrDataLFP, 'xml');
                 this.xml = stctContents.xml;
             end
 
-            stctXml = this.xml;
+            if nargin == 2
+                uknOut = this.xml.(strField);
+            else
+                uknOut = this.xml;
+            end
+        end
+
+        function clearBehavElectrDataLFP(this)
+            this.Clu = [];
+            this.Laps = [];
+            this.Spike = [];
+            this.Track = [];
+            this.xml = [];
+        end
+
+        function clearLfpData(this)
+            this.currentLfps = [];
         end
     end
 
@@ -169,7 +201,7 @@ classdef NeuralData < handle
         hndl = plotRipple(this, nRipple, varargin)
         plotRippleSpikeTrains(this, nRipple, varargin)
 
-        ripples = detectRipples(this, sharpWave, rippleWave, timeData, varargin)
+        [ripples, stctIntermediate] = detectRipples(this, sharpWave, rippleWave, timeData, varargin)
 
         rate = rawSampleRate(this)
         rate = sampleRate(this)

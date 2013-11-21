@@ -31,7 +31,7 @@
 %    method `getSequence` on each one, and concatenates the results into a
 %    cell array.
 %
-function cellSequences = getSequences(this, mtxTimeWindows, bRemoveInterneurons)
+function cellSequences = getSequences(this, mtxTimeWindows, varargin)
     % Retrieve the number of time windows, and initialize the return variable.
     nWindows = size(mtxTimeWindows, 1);
     cellSequences = cell(nWindows, 1);

@@ -1,3 +1,3 @@
 function n = numDataChannels(this)
-    n = this.xml.nChannels;
+    n = this.getXml('nChannels');
 end
