@@ -1,5 +1,5 @@
 % mtxTimeWindows = getPlaceCellSequences(this)
-function mtxTimeWindows = getPlaceFieldIntervals(this)
+function [mtxTimeWindows, cellClassification] = getPlaceFieldIntervals(this)
     % del = 1 (region-2)
     % whlL = 2 (region-1)
     % whlR = 3 (region-1)
@@ -17,21 +17,47 @@ function mtxTimeWindows = getPlaceFieldIntervals(this)
     vIntervals = (vMazeSect == 4 | vMazeSect == 5);
     mtxIntervals = getIntervals(vIntervals);
 
-    % If the animal is passing through an arm, then the area that it is in
-    % immediately before entering the arm should be different from the area that
-    % it enters immediately after leaving the arm. Additionally, the sections
-    % that the animal moves to/from should be in the list of valid sections.
-    vSectionBefore = vMazeSect(mtxIntervals(:, 1) - 1);
-    vSectionAfter = vMazeSect(mtxIntervals(:, 2) + 1);
+    [mtxLeftOut, mtxLeftBack] = getArmIntervals(this, 'left');
+    [mtxRightOut, mtxRightBack] = getArmIntervals(this, 'right');
 
-    vSurroundingSections = [7, 10, 8, 11];
-    vIsValid = ...
-        (vSectionBefore ~= vSectionAfter) ...
-        & ismember(vSectionBefore, vSurroundingSections) ...
-        & ismember(vSectionAfter, vSurroundingSections);
+    % Join the above lists into a master list and save the classification for
+    % each event.
+    mtxIntervals = [mtxLeftOut;  ...
+                    mtxLeftBack; ...
+                    mtxRightOut; ...
+                    mtxRightBack];
 
-    mtxIntervals = mtxIntervals(vIsValid, :);
+    cellClassification = vertcat( ...
+        repmat({'left/outbound'}, size(mtxLeftOut, 1), 1), ...
+        repmat({'left/inbound'}, size(mtxLeftOut, 1), 1), ...
+        repmat({'right/outbound'}, size(mtxLeftOut, 1), 1), ...
+        repmat({'right/inbound'}, size(mtxLeftOut, 1), 1));
 
     % Now, simply convert the index data to time data.
     mtxTimeWindows = mtxIntervals / sampleRate(this);
+end
+
+function [mtxOut, mtxBack] = getArmIntervals(this, strArm)
+    if strcmp(strArm, 'left')
+        nSection = 4;
+    elseif strcmp(strArm, 'right')
+        nSection = 5;
+    else
+        error();
+    end
+
+    strSuffix = ['_DataStructure_mazeSection' num2str(nSection) '_TypeMaze1.mat'];
+    strFile = fullfile(this.baseFolder, [this.baseFileName strSuffix]);
+    stctFile = load(strFile);
+
+    vTrials = find(~cellfun(@isempty, stctFile.trials));
+
+    for i = 1 : length(vTrials)
+        nTrial = vTrials(i);
+
+        mtxOut(i, :) = [stctFile.trials{nTrial}.lfpIndStart(1), ...
+                        stctFile.trials{nTrial}.lfpIndEnd(1)];
+        mtxBack(i, :) = [stctFile.trials{nTrial}.lfpIndStart(3), ...
+                         stctFile.trials{nTrial}.lfpIndEnd(3)];
+    end
 end

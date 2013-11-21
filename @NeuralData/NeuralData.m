@@ -226,7 +226,7 @@ classdef NeuralData < handle
         cellSequences = getWheelSequences(this, varargin)
 
         mtxTimeWindows = getWheelIntervals(this)
-        mtxTimeWindows = getPlaceFieldIntervals(this)
+        [mtxTimeWindows, cellClassification] = getPlaceFieldIntervals(this)
         [mtxEvents, nRipples, nWheelEvents, nPlaceFieldEvents] = getEvents(this)
 
         modifyRipple(this, nRipple, nStartTime, nEndTime)
