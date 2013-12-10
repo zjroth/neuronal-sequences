@@ -1,19 +1,20 @@
 % Enable parallel processing
-if matlabpool('size') == 0
+if license('test', 'Parallel_Toolbox') && matlabpool('size') == 0
     matlabpool('open');
 end
 
 % Ensure that this directory is the current directory.
-[folder, ~, ~] = fileparts(mfilename('fullpath'));
-cd(folder);
+[strRippleDir, ~, ~] = fileparts(mfilename('fullpath'));
+%cd(strRippleDir);
 
 % Add the appropriate folders to the path.
-addpath('./matlab-incremented');
-addpath('./neural-codeware');
-addpath('./matlab-cliquer');
+%addpath('~/projects/neural-codeware');
+%addpath('~/projects/matlab-cliquer');
 %addpath('./comparison/')
-addpath('./xmltree/');
-addpath(genpath('./chronux/chronux/'))
-addpath(genpath('./fma-toolbox/'))
+%addpath('./xmltree/');
+addpath(genpath('~/projects/chronux_2_10/'));
+addpath(genpath('~/projects/fma-toolbox/'));
+addpath('~/projects/matlab-incremented');
 
-addpath('./sequences/');
+addpath(fullfile(strRippleDir, 'sequences/'));
+addpath(genpath(fullfile(strRippleDir, 'figures')));
