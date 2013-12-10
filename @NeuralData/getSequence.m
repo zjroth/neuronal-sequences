@@ -24,7 +24,7 @@
 %
 %       The desired sequence of firings
 %
-function vSequence = getSequence(this, vTimeWindow, bRemoveInterneurons)
+function [vSequence, vTimes] = getSequence(this, vTimeWindow, bRemoveInterneurons)
     if nargin < 3
         bRemoveInterneurons = true;
     end
@@ -41,8 +41,9 @@ function vSequence = getSequence(this, vTimeWindow, bRemoveInterneurons)
     % sorted by spike times.
     vRes = this.getSpike('res');
     vIndices = find(nMinIndex < vRes & vRes < nMaxIndex);
-    [~, vOrder] = sort(vRes(vIndices));
+    [vTimes, vOrder] = sort(vRes(vIndices));
     vSequence = this.Spike.totclu(vIndices(vOrder));
+    vTimes = vTimes / sampleRate(this);
 
     % Remove interneurons from this sequence if requested. This is only possible
     % if this object contains the appropriate reference to identified
@@ -51,7 +52,9 @@ function vSequence = getSequence(this, vTimeWindow, bRemoveInterneurons)
         vInterneurons = getInterneurons(this);
 
         for i = 1 : length(vInterneurons)
-            vSequence(vSequence == vInterneurons(i)) = [];
+            vRemove = (vSequence == vInterneurons(i));
+            vSequence(vRemove) = [];
+            vTimes(vRemove) = [];
         end
     end
 end

@@ -219,8 +219,8 @@ classdef NeuralData < handle
         activeNeurons = getRippleActivity(this, nRipple)
         nRipples = getRippleCount(this)
         removeRipple(this, nRipple)
-        vSequence = getSequence(this, vTimeWindow, varargin)
-        cellSequences = getSequences(this, mtxTimeWindows, bRemoveInterneurons)
+        [vSequence, vTimes] = getSequence(this, vTimeWindow, varargin)
+        [cellSequences, cellTimes] = getSequences(this, mtxTimeWindows, bRemoveInterneurons)
         vSequence = getRippleSequence(this, nRipple, bRemoveInterneurons)
         cellSequences = getRippleSequences(this, varargin)
         cellSequences = getPlaceFieldSequences(this, varargin)
@@ -230,7 +230,9 @@ classdef NeuralData < handle
         [mtxTimeWindows, cellClassification] = getThetaIntervals(this)
         mtxTimeWindows = getWheelIntervals(this)
         [mtxTimeWindows, cellClassification] = getPlaceFieldIntervals(this)
-        [mtxEvents, nRipples, nWheelEvents, nPlaceFieldEvents] = getEvents(this)
+
+        objEvent = getEvent(this, vTimeWindow)
+        cellEvents = getEvents(this, mtxTimeWindows)
 
         modifyRipple(this, nRipple, nStartTime, nEndTime)
         modifyRipples(this, varargin)

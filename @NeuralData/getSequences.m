@@ -31,7 +31,7 @@
 %    method `getSequence` on each one, and concatenates the results into a
 %    cell array.
 %
-function cellSequences = getSequences(this, mtxTimeWindows, varargin)
+function [cellSequences, cellTimes] = getSequences(this, mtxTimeWindows, varargin)
     % Retrieve the number of time windows, and initialize the return variable.
     nWindows = size(mtxTimeWindows, 1);
     cellSequences = cell(nWindows, 1);
@@ -39,6 +39,6 @@ function cellSequences = getSequences(this, mtxTimeWindows, varargin)
     % Loop through the windows to get the sequence for each.
     for i = 1 : nWindows
         vWindow = mtxTimeWindows(i, :);
-        cellSequences{i} = this.getSequence(vWindow, varargin{:});
+        [cellSequences{i}, cellTimes{i}] = this.getSequence(vWindow, varargin{:});
     end
 end
