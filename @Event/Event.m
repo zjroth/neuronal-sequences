@@ -5,7 +5,7 @@
 %
 classdef Event
     properties (GetAccess = public, SetAccess = private)
-        window, spikes
+        window, spikes, times
     end
 
     methods (Access = public)
@@ -24,8 +24,8 @@ classdef Event
             this.window = vTimeWindow;
 
             [~, vOrder] = sort(vSpikeTimes);
-            this.spikes = TimeSeries(col(vSpikes(vOrder)), ...
-                                     vSpikeTimes(vOrder));
+            this.times = col(vSpikeTimes(vOrder));
+            this.spikes = col(vSpikes(vOrder));
         end
     end
 
@@ -35,11 +35,11 @@ classdef Event
         end
 
         function vSequence = sequence(this)
-            vSequence = this.spikes.Data;
+            vSequence = this.spikes;
         end
 
         function nLength = length(this)
-            nLength = length(this.spikes.Data);
+            nLength = length(this.spikes);
         end
 
         function dTime = startTime(this)
@@ -51,7 +51,7 @@ classdef Event
         end
 
         function vTimes = firingTimes(this, nCell)
-            vTimes = this.spikes.Time(sequence(this) == nCell);
+            vTimes = this.times(sequence(this) == nCell);
         end
 
         function cellTrains = spikeTrains(this)
