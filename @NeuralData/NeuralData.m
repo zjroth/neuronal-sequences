@@ -24,7 +24,7 @@ classdef NeuralData < handle
         Track = []
         xml = []
 
-        smoothingRadius = 0.03;
+        smoothingRadius = 0.005;
         ripples
 
         rawSampleTimes
@@ -194,6 +194,7 @@ classdef NeuralData < handle
 
         [spect, spectTimes, spectFrequencies] = getRippleSpectrogram(this, varargin);
 
+        nNeurons = getNeuronCount(this)
         n = numDataChannels(this)
 
         %plt = plotRipples(this, ...)
@@ -224,7 +225,9 @@ classdef NeuralData < handle
         cellSequences = getRippleSequences(this, varargin)
         cellSequences = getPlaceFieldSequences(this, varargin)
         cellSequences = getWheelSequences(this, varargin)
+        [cellSequences, cellClassification] = getThetaSequences(this, varargin)
 
+        [mtxTimeWindows, cellClassification] = getThetaIntervals(this)
         mtxTimeWindows = getWheelIntervals(this)
         [mtxTimeWindows, cellClassification] = getPlaceFieldIntervals(this)
         [mtxEvents, nRipples, nWheelEvents, nPlaceFieldEvents] = getEvents(this)
@@ -239,5 +242,9 @@ classdef NeuralData < handle
         mtxLocations = getSpikeLocations(this)
         vPoint = getLocationsAtTime(this, dTime, strUnits)
         vSpeeds = getSpeedsAtTimes(this, vTimes, dWindowWidth, strUnits)
+
+        vIndices = getIndicesFromWindow(this, vTimeWindow, strUnits)
+        dPeakFreq = getPeakFrequency(this, vTimeWindow, vFrequencyWindow, bWhiten)
+        vPeakFreqs = getPeakFrequencies(this, mtxTimeWindows, vFrequencyWindow, cellSpectParams)
     end
 end

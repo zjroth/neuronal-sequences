@@ -1,41 +1,111 @@
-% showEventMatrix(mtxCorrVals, mtxPVals, dThresh, vGroupSizes, fcnOnClick)
-function showEventMatrix(mtxCorrVals, mtxPVals, dThresh, vGroupSizes, fcnOnClick)
+%
+% USAGE:
+%
+%    showEventMatrix(mtxCorrVals, mtxP, dThresh, vGroupSizes, fcnOnClick)
+%
+% DESCRIPTION:
+%
+%    .
+%
+% ARGUMENTS:
+%
+%    mtxP
+%
+%       A matrix of p values to display
+%
+%    cellSpikeSeries
+%
+%       A cell array of cell arrays of `SpikeSeries` objects
+%
+% NAMED PARAMETERS:
+%
+%    dMaxP (default: 0.05)
+%
+%       All p values greater than or equal to this are not shown
+%
+%    fcnOnClick (default: nothing)
+%
+%       A function that takes two parameters, the x and y values of the pixel
+%       that is selected on a user's click
+%
+%    vGroupSizes (default: [])
+%
+%       This is ignored if `cellSpikeSeries` is a cell array of cell arrays
+%
+%    mtxColorMap (default: `flipud(jet(64))`)
+%
+%       A 3-column matrix of RGB colors to use as the color map
+%
+%    mtxSigns (default: all ones)
+%
+%       .
+%
+function showEventMatrix(mtxP, cellSpikeSeries, varargin)
+    % Get set the default parameter values.
+    dMaxP = 0.05;
+    fcnOnClick = [];
+    vGroupSizes = [];
+    mtxColorMap = flipup(jet(64));
+    mtxSigns = 1;
+    parseNamedParams();
+
+    % Ensure that the input matrix is square.
+    assert(size(mtxP, 1) == size(mtxP, 2), ...
+           'showEventMatix: the first input must be a square matrix.');
+
     % The number of elements is the number of rows in the correlation matrix.
-    nElts = size(mtxCorrVals, 1);
-    assert(sum(vGroupSizes) == nElts);
+    nElts = size(mtxP, 1);
 
-    % To construct the bubble plot, we need the locations of the rho values
-    % that are above the threshold (in absolute value) in addition to the
-    % actual values.
-    mtxSignificant = triu(mtxPVals < dThresh, 1);
-    dMinNonzero = min(nonzeros(mtxPVals));
-    mtxImage = log10(max(mtxPVals, dMinNonzero / 2)) .* sign(mtxCorrVals);
+    % Retrieve the size of the groups if they're specified as part of the
+    % cell array of spikes.
+    if strcmp(class(cellSpikeSeries{1}), 'cell')
+        vGroupSizes = cellfun(@length, cellSpikeSeries);
 
-    % Create the figure.
+        % Also flatten the list of spikes.  The result here is a cell array
+        % of `SpikeSeries` objects.
+        cellSpikeSeries = {cellfun(@(x) x{:}, cellSpikeSeries)};
+    end
+
+    % Retrieve the spike trains associated with this list of spikes.
+    cellTrains = cellfun(@SpikeSeries.trains, cellSpikeSeries);
+
+    % Ensure that the size of the groups is consistent with the size of the
+    % input matrix.
+    if ~isempty(vGroupSizes)
+        assert(nElts == sum(vGroupSizes));
+    end
+
+    % Deem an entry significant if the corresponding p-value is small enough.
+    mtxSignificant = triu(mtxP < dMaxP, 1);
+    dMinNonzero = min(nonzeros(mtxP));
+    mtxImage = log10(max(abs(mtxP), dMinNonzero / 2)) .* sign(mtxSigns);
+
+    % Create the figure and display the image.
     hdlFigure = figure();
-
-    whiteImage(mtxImage, mtxSignificant, 0.5, -1, [], flipud(jet(64)));
+    whiteImage(mtxImage, mtxSignificant, 0.5, -1, [], mtxColorMap);
     set(gca, 'YDir', 'normal')
 
     % Label the plot and set x- and y-limits.
-    xlabel('Sequence Events');
-    ylabel('Sequence Events');
+    xlabel('Events');
+    ylabel('Events');
 
     % Show lines indicating the separation between pre/musc/post sequences
     % and a line showing the diagonal.
-    vGroupSplitIndices = cumsum(vGroupSizes);
-    for i = 1 : length(vGroupSplitIndices)
-        vline(vGroupSplitIndices(i) + 0.5);
-        hline(vGroupSplitIndices(i) + 0.5);
+    if ~isempty(vGroupSizes)
+        vGroupSplitIndices = cumsum(vGroupSizes);
+        for i = 1 : length(vGroupSplitIndices)
+            vline(vGroupSplitIndices(i) + 0.5);
+            hline(vGroupSplitIndices(i) + 0.5);
+        end
     end
 
     line([0, nElts], [0, nElts]);
 
     % Create a button to view a pair of spike trains.
     btnDisplay = uicontrol(hdlFigure, ...
-        'Style', 'pushbutton', ...
-        'String', 'View sequences', ...
-        'Position', [10 10 120 40]);
+                           'Style', 'pushbutton', ...
+                           'String', 'View sequences', ...
+                           'Position', [10 10 120 40]);
     set(btnDisplay, 'Callback', @selectPixelAndExecute);
 
     % Ensure that the figure has the normal toolbar (for zooming and whatnot).
@@ -56,32 +126,51 @@ function showEventMatrix(mtxCorrVals, mtxPVals, dThresh, vGroupSizes, fcnOnClick
         nEventX = round(x);
         nEventY = round(y);
 
-        fcnOnClick(nEventX, nEventY);
-        set(gcf, 'name', ['P value: ' num2str(mtxPVals(nEventY, nEventX))]);
+        compareSpikeSeries(cellSpikeSeries{nEventX}, cellSpikeSeries{nEventY});
+        set(gcf, 'name', ['P value: ' num2str(mtxP(nEventY, nEventX))]);
     end
 end
 
-function vSequenceOrder = sortSequence(vComponentSize, vComponentIndex, vGroupSizes)
-    % Determine the order in which to display the sequences.  The sequences
-    % are grouped first by pre/musc/post and then sorted by the size of the
-    % component to which the sequence belongs in the threshold graph.
 
-    % Retrieve the component numbers sorted by descending size of the
-    % corresponding component.
-    [vSortedComponentSizes, vOrderedBySize] = sort(vComponentSize, 'descend');
-    [~, vOrderedBySize] = sort(vOrderedBySize);
+% compareSpikeTrains(this, strCondX, vTimeWindowX, strCondY, vTimeWindowY)
+function compareSpikeSeries(objSeriesX, objSeriesY)
+    cellXTrains = cellTrainCollns{vCollnNums(nX)};
+    cellYTrains = cellTrainCollns{vCollnNums(nY)};
 
-    % Now that we have a list of the components sorted by size, we can sort the
-    % vector containing the indices of the components that each vertex belongs
-    % to by the size of the corresponding component. To do this, build a vector
-    % containing...
-    vTmp = vOrderedBySize(vComponentIndex);
+    vTimeWindowX = mtxEvents(nX, :);
+    vTimeWindowY = mtxEvents(nY, :);
 
-    vGroupSplitIndices = [0, cumsum(vGroupSizes)];
-    vSequenceOrder = [];
+    % Retrieve the ideal sort order for sequence x, and retrieve the neurons
+    % that are active in sequence y. The neuron order is the order given by
+    % the ideal order for sequence x with the restriction that all neurons
+    % must also belong to sequence y.
+    vOrderForX = sortNeuronsInWindow(cellXTrains, vTimeWindowX);
+    vOrderForY = sortNeuronsInWindow(cellYTrains, vTimeWindowY);
+    vInX = intersect(vOrderForX, vActiveNeurons);
+    vInY = intersect(vOrderForY, vActiveNeurons);
+    vNeuronOrderX = intersect(vOrderForX, vInY, 'stable');
+    vNeuronOrderY = intersect(vOrderForY, vInX, 'stable');
 
-    for i = 1 : length(vGroupSplitIndices) - 1
-        [~, vOrder] = sort(vTmp(vGroupSplitIndices(i) + 1 : vGroupSplitIndices(i + 1)));
-        vSequenceOrder = [vSequenceOrder; vOrder + vGroupSplitIndices(i)];
-    end
+    % Plot the sequences with the above-found sorting order.
+    figure();
+
+    subplot(2, 2, 1);
+    plot(objSeriesX, ...
+        vTimeWindowX, vNeuronOrderX, 'bRemoveInterneurons', true);
+    title('Sequence 1 (ideal ordering)');
+
+    subplot(2, 2, 2);
+    plot(objSeriesX, ...
+        vTimeWindowX, vNeuronOrderY, 'bRemoveInterneurons', true);
+    title('Sequence 1 (ideal ordering for sequence 2)');
+
+    subplot(2, 2, 3);
+    plot(objSeriesY, ...
+        vTimeWindowY, vNeuronOrderX, 'bRemoveInterneurons', true);
+    title('Sequence 2 (ideal ordering for sequence 1)');
+
+    subplot(2, 2, 4);
+    plot(objSeriesY, ...
+        vTimeWindowY, vNeuronOrderY, 'bRemoveInterneurons', true);
+    title('Sequence 2 (ideal ordering)');
 end

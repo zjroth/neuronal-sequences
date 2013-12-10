@@ -42,22 +42,29 @@ function vSpeeds = getSpeedsAtTimes(this, vTimes, dWindowWidth, strUnits)
 
     % Define a matrix of windows based on the given window width and the given
     % times.
-    mtxWindows = bsxfun(@plus, col(vTimes), ...
-                        [-dWindowWidth / 2, dWindowWidth / 2]);
+    vStartTimes = col(vTimes) - (dWindowWidth / 2);
 
     % Convert the above-determined windows into index windows.
     switch strUnits
       case 'seconds'
-        mtxIndices = round(mtxWindows * sampleRate(this));
+        vStartIndices = round(vStartTimes * sampleRate(this));
+        nIndicesInWindow = round(dWindowWidth * sampleRate(this));
       case 'milliseconds'
-        mtxIndices = round(mtxWindows ./ 1000 * sampleRate(this));
+        vStartIndices = round(vStartTimes * (sampleRate(this) / 1000));
+        nIndicesInWindow = round(dWindowWidth * sampleRate(this) / 1000);
       case 'indices'
-        mtxIndices = mtxWindows;
+        vStartIndices = vStartTimes;
+        nIndicesInWindow = dWindowWidth;
     end
 
-    % Expand the index windows into complete lists of indices, and then
-    % retrieve the speeds and average them.
-    cellIndices = arrayfun(@colon, mtxIndices(:, 1), mtxIndices(:, 2), ...
-                           'UniformOutput', false);
-    vSpeeds = mean(this.Track.speed_MMsec(vertcat(cellIndices{:})), 2);
+    % Expand the index windows into complete lists of indices, and then retrieve
+    % the speeds and average them.
+    vRawSpeeds = this.getTrack('speed_MMsec');
+    nLength = length(vRawSpeeds);
+
+    cellIndices = arrayfun(@(s) colon(s, s + nIndicesInWindow - 1), ...
+                           vStartIndices, 'UniformOutput', false);
+    cellIndices = cellfun(@(v) v(v >= 1 & v <= nLength), cellIndices, ...
+                          'UniformOutput', false);
+    vSpeeds = cellfun(@(i) mean(vRawSpeeds(i)), cellIndices);
 end

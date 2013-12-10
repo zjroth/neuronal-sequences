@@ -13,31 +13,27 @@ function [mtxTimeWindows, cellClassification] = getPlaceFieldIntervals(this)
     % turnR = 11 (region-9)
 
     % Retrieve the intervals in which the animal is in one of the arms.
-    vMazeSect = this.getTrack('mazeSect');
-    vIntervals = (vMazeSect == 4 | vMazeSect == 5);
-    mtxIntervals = getIntervals(vIntervals);
-
-    [mtxLeftOut, mtxLeftBack] = getArmIntervals(this, 'left');
-    [mtxRightOut, mtxRightBack] = getArmIntervals(this, 'right');
+    [mtxLeftOut, mtxLeftIn] = getArmIntervals(this, 'left');
+    [mtxRightOut, mtxRightIn] = getArmIntervals(this, 'right');
 
     % Join the above lists into a master list and save the classification for
     % each event.
     mtxIntervals = [mtxLeftOut;  ...
-                    mtxLeftBack; ...
+                    mtxLeftIn; ...
                     mtxRightOut; ...
-                    mtxRightBack];
+                    mtxRightIn];
 
     cellClassification = vertcat( ...
         repmat({'left/outbound'}, size(mtxLeftOut, 1), 1), ...
-        repmat({'left/inbound'}, size(mtxLeftOut, 1), 1), ...
-        repmat({'right/outbound'}, size(mtxLeftOut, 1), 1), ...
-        repmat({'right/inbound'}, size(mtxLeftOut, 1), 1));
+        repmat({'left/inbound'}, size(mtxLeftIn, 1), 1), ...
+        repmat({'right/outbound'}, size(mtxRightOut, 1), 1), ...
+        repmat({'right/inbound'}, size(mtxRightIn, 1), 1));
 
     % Now, simply convert the index data to time data.
     mtxTimeWindows = mtxIntervals / sampleRate(this);
 end
 
-function [mtxOut, mtxBack] = getArmIntervals(this, strArm)
+function [mtxOut, mtxIn] = getArmIntervals(this, strArm)
     if strcmp(strArm, 'left')
         nSection = 4;
     elseif strcmp(strArm, 'right')
@@ -57,7 +53,7 @@ function [mtxOut, mtxBack] = getArmIntervals(this, strArm)
 
         mtxOut(i, :) = [stctFile.trials{nTrial}.lfpIndStart(1), ...
                         stctFile.trials{nTrial}.lfpIndEnd(1)];
-        mtxBack(i, :) = [stctFile.trials{nTrial}.lfpIndStart(3), ...
-                         stctFile.trials{nTrial}.lfpIndEnd(3)];
+        mtxIn(i, :) = [stctFile.trials{nTrial}.lfpIndStart(3), ...
+                       stctFile.trials{nTrial}.lfpIndEnd(3)];
     end
 end

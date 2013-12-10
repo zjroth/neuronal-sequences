@@ -1,7 +1,7 @@
 % cellTrains = getSpikeTrains(this, bRemoveInterneurons)
 function cellTrains = getSpikeTrains(this, bRemoveInterneurons)
     if nargin < 2
-        bRemoveInterneurons = false;
+        bRemoveInterneurons = true;
     end
 
     % Ensure that the spike trains have already been grouped.

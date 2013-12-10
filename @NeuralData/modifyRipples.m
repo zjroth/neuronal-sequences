@@ -28,8 +28,7 @@ function modifyRipples(this, varargin)
     nRipples = getRippleCount(this);
     nCurrRipple = 1;
     cellOrderings = { (1 : length(getSpikeTrains(this))) };
-    plotRipple(nCurrRipple, lfpTripleTs, this, ...
-        'cellOrderings', cellOrderings);
+    plotRipple(this, nCurrRipple, 'cellOrderings', cellOrderings);
 
     function handleKeyPress(hObject, eventdata)
         if strcmp(eventdata.Key, 'rightarrow') || strcmp(eventdata.Key, 'space')
@@ -47,8 +46,7 @@ function modifyRipples(this, varargin)
             save(strRippleFile, 'nCurrRipple', 'mtxRipples');
         end
 
-        plotRipple(nCurrRipple, lfpTripleTs, this, ...
-            'cellOrderings', cellOrderings);
+        plotRipple(this, nCurrRipple, 'cellOrderings', cellOrderings);
     end
 
     function exportRipples(hObject, eventdata)

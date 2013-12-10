@@ -1,52 +1,54 @@
-%------------------------------------------------------------------------------
+%
 % USAGE:
 %
 %    rplPower = getRippleSpectrogram(this, ...)
 %
 % DESCRIPTION:
 %
-%    Compute a spectrogram for the given LFP.
-%
-% ARGUMENTS:
-%
-%    lfp
-%       The LFP for which we are computing a spectrogram
+%    Compute a spectrogram for the given LFP
 %
 % OPTIONAL PARAMETERS:
 %
 %    lfpSampleRate (default: 2e4)
+%
 %       The sample rate (in Hertz) of the provided LFP
 %
-%    frequencyRange (default: [90, 180])
+%    frequencyRange (default: [90, 250])
+%
 %       The frequency range (in Hertz) for which the spectrogram will be
 %       computed
 %
 %    sampleRate (default: 1250)
+%
 %       The rate (in Hertz) at which the resultant spectrogram will be sampled
 %
-%    windowWidth (default: 0.25)
+%    windowWidth (default: 0.3)
+%
 %       The width (in seconds) of the window to use in the spectrogram
 %       computation.
 %
 % RETURNS:
 %
 %    spect
+%
 %       The scaled spectrogram
 %
 %    spectTimes
+%
 %       The times (in seconds) for which the spectrogram contains data
 %
 %    spectFrequencies
+%
 %       The frequencies (in Hertz) for which the spectrogram contains data
-%------------------------------------------------------------------------------
+%
 function [spect, spectTimes, spectFrequencies] = getRippleSpectrogram(this, varargin)
     %=======================================================================
     % Default optional parameter values
     %=======================================================================
 
     % All times are in seconds, and all frequencies are in Hertz.
-    frequencyRange = [90, 180];
-    windowWidth = 0.1;
+    frequencyRange = [90, 250];
+    windowWidth = 0.3;
     sampleRate = 1250;
 
     % Replace the default values with any values that were passed to
@@ -67,6 +69,8 @@ function [spect, spectTimes, spectFrequencies] = getRippleSpectrogram(this, vara
     % If this has been called before with the same parameters, then the data
     % should already be saved somewhere. Construct the filename here.
     [lfp, channel] = mainLfp(this);
+    lfp = lfp - mean(lfp);
+
     spectFile = [                                                                ...
         'ch' num2str(channel) '-'                                                ...
         'range-' num2str(frequencyRange(1)) '-' num2str(frequencyRange(2)) 'Hz-' ...

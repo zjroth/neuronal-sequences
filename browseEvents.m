@@ -187,6 +187,21 @@ function browseEvents_OpeningFcn(hObject, eventdata, handles, varargin)
     handles.mtxEvents = varargin{2};
     handles.output = hObject;
 
+    %
+    handles.objLfps = TimeSeries(downsample(handles.objLfps.Data, 16), ...
+                                 downsample(handles.objLfps.Time, 16));
+    nAveragingFilterLength = round(0.5 * sampleRate(handles.objNeuralData));
+    vAveragingFilter = ones(1, nAveragingFilterLength) ./ nAveragingFilterLength;
+
+    vLocalAverage = conv(handles.objLfps.Data(:, 1), vAveragingFilter, 'same');
+    handles.objLfps.Data(:, 1) = handles.objLfps.Data(:, 1) - vLocalAverage;
+
+    vLocalAverage = conv(handles.objLfps.Data(:, 2), vAveragingFilter, 'same');
+    handles.objLfps.Data(:, 2) = handles.objLfps.Data(:, 2) - vLocalAverage;
+
+    vLocalAverage = conv(handles.objLfps.Data(:, 3), vAveragingFilter, 'same');
+    handles.objLfps.Data(:, 3) = handles.objLfps.Data(:, 3) - vLocalAverage;
+
     % Ensure that the event matrix has two columns and that there's at least one
     % event.
     assert(size(handles.mtxEvents, 2) == 2 && ~isempty(handles.mtxEvents), ...

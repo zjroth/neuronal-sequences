@@ -1,11 +1,6 @@
-% mtxP = computePValues(cellSeqs, nTrials, strFolder)
-function mtxP = computePValues(cellSeqs, nTrials, strFolder)
-    % Determine whether or not we should be saving the individual rho matrices
-    % to files in a specified folder.
-    bSaveFiles = exist('strFolder', 'var') && ~isempty(strFolder);
-
+function [mtxP, mtxCounts] = computePValues(cellSeqs, nTrials)
     % Find which neurons are active in each sequence, and compute the number
-    % of neurons that are active in each pair of sequnces.
+    % of neurons that are active in each pair of sequences.
     mtxActivity = toMatrix(cellSeqs);
     mtxNumCoactive = mtxActivity * mtxActivity.';
 
@@ -15,39 +10,20 @@ function mtxP = computePValues(cellSeqs, nTrials, strFolder)
     % To compute p, we need rho for each pair of sequences. Initialize the
     % return variable under the assumption that all rho values are
     % insignificant.
-    mtxRho = computeRhoMatrix(cellSeqs, 0);
-    mtxP = ones(nSequences);
+    mtxRho = abs(computeRhoMatrix(cellSeqs, 0));
+    mtxCounts = zeros(nSequences);
 
-    % For each pair of sequences...
-    for i = 1 : nSequences - 1
-        parfor j = i + 1 : nSequences
-            if mtxNumCoactive(i, j) > 3
-                % ...compute a distribution of rho values for the current
-                % pair of sequences.
-                vDistribution = computeRhoDistribution(cellSeqs{i}, ...
-                                                       cellSeqs{j}, nTrials);
+    % For each trial...
+    parfor i = 1 : nTrials
+        % ...compute the rho matrix for a collection of shuffled sequences.
+        cellShuffled = cellfun(@shuffle, cellSeqs, 'UniformOutput', false);
+        mtxRhoShuffled = abs(computeRhoMatrix(cellShuffled, 0));
 
-                % Save the distribution if a folder was provided.
-                if bSaveFiles
-                    strFile = fullfile(strFolder, ['seqs-' num2str(i) '-' num2str(j)]);
-                    saveDistribution(strFile, vDistribution);
-                end
-
-                % Compute p.
-                mtxP(i, j) = nnz(abs(vDistribution) > abs(mtxRho(i, j))) / ...
-                    nTrials;
-            end
-        end
+        % Add this matrix to the return variable.
+        mtxCounts = mtxCounts + (mtxRhoShuffled > mtxRho);
     end
 
-    % Make the matrix of p values symmetric. This couldn't be done inside of
-    % a parfor-loop.
-    mtxP = triu(mtxP) + triu(mtxP, 1).';
-end
-
-% A function for saving within a `parfor` loop. Replacing the invocation of this
-% function with the one line that it contains will cause a transparency
-% violation error.
-function saveDistribution(strFile, vDistribution)
-    save(strFile, '-v7.3', 'vDistribution');
+    % Build our return variable.
+    mtxP = ones(nSequences);
+    mtxP(mtxNumCoactive > 3) = mtxCounts(mtxNumCoactive > 3) ./ nTrials;
 end
