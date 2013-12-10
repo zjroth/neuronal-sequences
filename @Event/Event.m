@@ -5,7 +5,7 @@
 %
 classdef Event
     properties (GetAccess = public, SetAccess = private)
-        startTime, endTime, spikeSeries
+        window, spikes
     end
 
     methods (Access = public)
@@ -21,12 +21,11 @@ classdef Event
                    && all(vSpikeTimes <= vTimeWindow(2)), ...
                    'Please ensure that all times lie within the given window');
 
-            this.startTime = vTimeWindow(1);
-            this.endTime = vTimeWindow(2);
+            this.window = vTimeWindow;
 
             [~, vOrder] = sort(vSpikeTimes);
-            this.spikeSeries = TimeSeries(col(vSpikes(vOrder)), ...
-                                          vSpikeTimes(vOrder));
+            this.spikes = TimeSeries(col(vSpikes(vOrder)), ...
+                                     vSpikeTimes(vOrder));
         end
     end
 
@@ -36,7 +35,43 @@ classdef Event
         end
 
         function vSequence = sequence(this)
-            vSequence = this.spikeSeries.Data;
+            vSequence = this.spikes.Data;
+        end
+
+        function nLength = length(this)
+            nLength = length(this.spikes.Data);
+        end
+
+        function dTime = startTime(this)
+            dTime = this.window(1);
+        end
+
+        function dTime = endTime(this)
+            dTime = this.window(2);
+        end
+
+        function vTimes = firingTimes(this, nCell)
+            vTimes = this.spikes.Time(sequence(this) == nCell);
+        end
+
+        function cellTrains = spikeTrains(this)
+            cellTrains = arrayfun(@this.firingTimes, ...
+                                  1 : max(activeCells(this)), ...
+                                  'UniformOutput', false);
+        end
+
+        function plot(this, varargin)
+            plotSpikeTrains(spikeTrains(this), this.window, varargin{:});
+        end
+
+        function plotSequence(this, varargin)
+            % Create a new `Event` whose time information has been replaced
+            % by an ordering.
+            nLength = length(this);
+            evtSequence = Event([1, nLength], 1 : nLength, sequence(this));
+
+            % Now just plot the new `Event`.
+            plot(evtSequence, varargin{:});
         end
     end
 end
