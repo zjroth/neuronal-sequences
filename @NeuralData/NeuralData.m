@@ -231,8 +231,8 @@ classdef NeuralData < handle
         mtxTimeWindows = getWheelIntervals(this)
         [mtxTimeWindows, cellClassification] = getPlaceFieldIntervals(this)
 
-        objEvent = getEvent(this, vTimeWindow)
-        cellEvents = getEvents(this, mtxTimeWindows)
+        objEvent = getEvent(this, vTimeWindow, strClassification)
+        cellEvents = getEvents(this, mtxTimeWindows, uknClassification)
         cellEvents = getPlaceFieldEvents(this);
         cellEvents = getThetaEvents(this);
         cellEvents = getWheelEvents(this);
