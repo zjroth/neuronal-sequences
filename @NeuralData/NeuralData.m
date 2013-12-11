@@ -233,6 +233,9 @@ classdef NeuralData < handle
 
         objEvent = getEvent(this, vTimeWindow)
         cellEvents = getEvents(this, mtxTimeWindows)
+        cellEvents = getPlaceFieldEvents(this);
+        cellEvents = getThetaEvents(this);
+        cellEvents = getWheelEvents(this);
 
         modifyRipple(this, nRipple, nStartTime, nEndTime)
         modifyRipples(this, varargin)
