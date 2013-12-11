@@ -5,7 +5,7 @@
 %
 classdef Event
     properties (GetAccess = public, SetAccess = private)
-        window, spikes, times
+        window, spikes, times, type
     end
 
     methods (Access = public)
@@ -16,7 +16,7 @@ classdef Event
         %
         % NOTE: vSpikeTimes and vSpikes must be the same length; the spike
         % times must all lie within the specified time window.
-        function this = Event(vTimeWindow, vSpikeTimes, vSpikes)
+        function this = Event(vTimeWindow, vSpikeTimes, vSpikes, strType)
             assert(all(vSpikeTimes >= vTimeWindow(1)) ...
                    && all(vSpikeTimes <= vTimeWindow(2)), ...
                    'Please ensure that all times lie within the given window');
@@ -26,6 +26,12 @@ classdef Event
             [~, vOrder] = sort(vSpikeTimes);
             this.times = col(vSpikeTimes(vOrder));
             this.spikes = col(vSpikes(vOrder));
+
+            if nargin < 4
+                strType = '';
+            end
+
+            this.type = strType;
         end
     end
 
