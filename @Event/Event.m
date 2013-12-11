@@ -44,6 +44,10 @@ classdef Event
             vSequence = this.spikes;
         end
 
+        function dDuration = duration(this)
+            dDuration = endTime(this) - startTime(this);
+        end
+
         function nLength = length(this)
             nLength = length(this.spikes);
         end
