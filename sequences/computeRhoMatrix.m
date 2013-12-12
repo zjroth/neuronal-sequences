@@ -31,9 +31,9 @@ function [mtxRho, vIncluded] = computeRhoMatrix(cellSequences, vNumActiveNeurons
     cellMu = cell(nSequences, 1);
 
     for i = 1 : nSequences
-        cellM{i} = computeM(cellSequences{vIncluded(i)}, nNeurons);
+        cellPairCounts{i} = countOrderedPairs(cellSequences{vIncluded(i)}, nNeurons);
         cellN{i} = computeN(cellSequences{vIncluded(i)}, nNeurons);
-        cellMu{i} = computeMu(cellM{i}, cellN{i});
+        cellMu{i} = computeMu(cellPairCounts{i}, cellN{i});
     end
 
     % Initialize the matrix of rho values.
