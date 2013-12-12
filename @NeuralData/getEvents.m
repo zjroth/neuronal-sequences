@@ -15,6 +15,8 @@ function cellEvents = getEvents(this, mtxTimeWindows, uknClassification)
         cellClassification(:) = {uknClassification};
     end
 
+    cellEvents = cell(nWindows, 1);
+
     for i = 1 : nWindows
         cellEvents{i} = getEvent(this, mtxTimeWindows(i, :), cellClassification{i});
     end
