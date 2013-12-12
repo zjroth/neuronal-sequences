@@ -110,7 +110,7 @@ function [ripples, stctIntermediate] = detectRipples(this, varargin)
 
     % Our initial guess for where ripples are occuring will be based solely on
     % thresholding the sharp-wave signal.
-    rippleIntervals = getIntervals(vSharpWave >= minSharpWave);
+    rippleIntervals = findIntervals(vSharpWave >= minSharpWave);
 
     % The above thresholding likely detected lots of very short event intervals.
     % Remove events that are too short (which we do now to speed up later
