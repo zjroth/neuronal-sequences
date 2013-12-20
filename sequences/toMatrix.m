@@ -1,9 +1,12 @@
 % mtxSeqs = toMatrix(cellSeqs)
-function mtxSeqs = toMatrix(cellSeqs)
+function mtxSeqs = toMatrix(cellSeqs, nMaxElt)
     % Store the number of sequences, and compute the maximum neuron
     % value that is involved in any of the provided sequences.
     nSeqs = length(cellSeqs);
-    nMaxElt = max(cellfun(@myMax, cellSeqs));
+
+    if nargin < 2
+        nMaxElt = maxActive(cellSeqs);
+    end
 
     % Initialize the return value. Each sequence corresponds to a row
     % of this matrix.
@@ -16,14 +19,9 @@ function mtxSeqs = toMatrix(cellSeqs)
     for i = 1 : nSeqs
         mtxSeqs(i, cellSeqs{i}) = 1;
     end
-end
 
-% For convenience, we want the max of an empty sequence to be negative
-% infinity.
-function n = myMax(v)
-    n = max(v);
-
-    if isempty(n)
-        n = -Inf;
+    % This is only possible if `nMaxElt` was passed in.
+    if size(mtxSeqs, 2) > nMaxElt
+        mtxSeqs(:, nMaxElt + 1 : end) = [];
     end
 end
