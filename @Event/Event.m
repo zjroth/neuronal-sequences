@@ -61,12 +61,20 @@ classdef Event
         end
 
         function vTimes = firingTimes(this, nCell)
-            vTimes = this.times(sequence(this) == nCell);
+            if nargin < 2
+                vTimes = this.times;
+            else
+                vTimes = this.times(sequence(this) == nCell);
+            end
         end
 
-        function cellTrains = spikeTrains(this)
+        function cellTrains = spikeTrains(this, vCells)
+            if nargin < 2
+                vCells = 1 : max(activeCells(this));
+            end
+
             cellTrains = arrayfun(@this.firingTimes, ...
-                                  1 : max(activeCells(this)), ...
+                                  col(vCells), ...
                                   'UniformOutput', false);
         end
 
