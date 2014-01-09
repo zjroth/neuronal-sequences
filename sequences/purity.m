@@ -30,6 +30,8 @@
 function [dPurity, dMagnitude, vMagnitudes] = purity(vSequence, nTrials)
     if isempty(vSequence)
         dPurity = 0;
+        dMagnitude = 0;
+        vMagnitudes = [];
         return;
     end
 
