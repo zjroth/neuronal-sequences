@@ -91,5 +91,19 @@ classdef Event
             % Now just plot the new `Event`.
             plot(evtSequence, varargin{:});
         end
+
+        function vOrder = orderCells(this)
+            vSequence = sequence(this);
+            vNeurons = unique(sequence(this));
+            vCentersOfMass = zeros(size(vNeurons));
+
+            for i = 1 : length(vNeurons)
+                vCentersOfMass(i) = mean(find(vSequence == vNeurons(i)));
+            end
+
+            [~, vOrder] = sort(vCentersOfMass);
+            vOrder = vNeurons(vOrder);
+        end
+
     end
 end
