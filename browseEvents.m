@@ -63,6 +63,7 @@ function updateGui(handles)
     plot(handles.axEvent, objLocalLfps.Time, objLocalLfps.Data);
 
     % Set plot niceties.
+    axes(handles.axEvent);
     set(handles.axEvent, 'Layer', 'top');
     legend('Main', 'Low', 'High');
     % title(['LFPs and Ripple Event ' num2str(handles.nCurrentEvent)]);
@@ -71,6 +72,14 @@ function updateGui(handles)
     xlim(vTimeWindow);
     set(handles.axEvent, 'Color', [1, 1, 1]);
 
+    PlotIntervals(vEvent, 'rectangles');
+
+    axes(handles.axSpikes);
+    plotSpikeTrains(handles.cellTrains, vTimeWindow, [], [], false, ...
+                    handles.axSpikes);
+    set(handles.axEvent, 'Layer', 'top');
+    xlim(vTimeWindow);
+    set(handles.axEvent, 'Color', [1, 1, 1]);
     PlotIntervals(vEvent, 'rectangles');
 
     % % For each of the provided orderings, create plots of the associated spike
@@ -187,6 +196,8 @@ function browseEvents_OpeningFcn(hObject, eventdata, handles, varargin)
     handles.mtxEvents = varargin{2};
     handles.output = hObject;
 
+    handles.cellTrains = getSpikeTrains(handles.objNeuralData);
+
     %
     handles.objLfps = TimeSeries(downsample(handles.objLfps.Data, 16), ...
                                  downsample(handles.objLfps.Time, 16));
@@ -218,7 +229,7 @@ function browseEvents_OpeningFcn(hObject, eventdata, handles, varargin)
     updateGui(handles);
 
     % UIWAIT makes browseEvents wait for user response (see UIRESUME)
-    %uiwait(handles.figure1);
+    uiwait(handles.figure1);
 end
 
 % --- Executes when user attempts to close figure1.
@@ -245,7 +256,7 @@ function varargout = browseEvents_OutputFcn(hObject, eventdata, handles)
     % handles    structure with handles and user data (see GUIDATA)
 
     % Get default command line output from handles structure
-    varargout{1} = handles.output; %handles.mtxEvents;
+    varargout{1} = handles.mtxEvents;
 
     % The figure can be deleted now
     %delete(handles.figure1);

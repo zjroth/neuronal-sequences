@@ -34,7 +34,8 @@
 %       A boolean. If true, neurons that don't fire in the given time window
 %       will not take up vertical space.
 %
-function plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors, bCompress)
+function plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors, ...
+                         bCompress, axPlot)
     % Set the default time window to be just as wide as it has to be.
     if nargin < 2 || isempty(vTimeWindow)
         dMinSpike = min(cellfun(@myMin, cellTrains));
@@ -53,8 +54,13 @@ function plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors, bCompres
     end
 
     % By default, we don't want a neuron that doesn't fire to take up any space.
-    if nargin < 5
+    if nargin < 5 || isempty(bCompress)
         bCompress = false;
+    end
+
+    % Use the current axes unless told otherwise
+    if nargin < 6 || isempty(axPlot)
+        axPlot = gca();
     end
 
     % Store the start/end of the ripple window, and store the number of colors
@@ -71,7 +77,7 @@ function plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors, bCompres
     % Clear the current axes. Also, since each train will be plotted
     % individually, we need to tell matlab not to overwrite what has already
     % been plotted.
-    cla();
+    cla(axPlot);
     hold('on');
 
     % For each neuron's spike train, plot that spike train along a horizontal
@@ -93,7 +99,8 @@ function plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors, bCompres
         if ~bCompress || ~isempty(vTrain)
             nNumPlotted = nNumPlotted + 1;
             vSpikeColor = mtxColors(mod(nCurrNeuron - 1, nColors) + 1, :);
-            plot(vTrain, nNumPlotted * ones(size(vTrain)), '.', 'Color', vSpikeColor);
+            plot(axPlot, vTrain, nNumPlotted * ones(size(vTrain)), ...
+                 '.', 'Color', vSpikeColor);
         end
     end
 

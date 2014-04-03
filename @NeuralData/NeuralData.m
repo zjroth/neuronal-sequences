@@ -70,7 +70,7 @@ classdef NeuralData < handle
         %---------------------------------------------------------------
         function this = NeuralData(strDataPath, strCachePath)
             % Find the name of the recording.
-            cellFiles = findFiles(strDataPath, '^A\d{1,4}-\d{8}-\d{2}\.dat$');
+            cellFiles = findfiles(strDataPath, '^A\d{1,4}-\d{8}-\d{2}\.dat$');
 
             assert(length(cellFiles) > 0, ...
                    ['Please ensure that the data file matches the following ' ...

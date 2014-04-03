@@ -12,8 +12,8 @@ end
 %addpath('~/projects/matlab-cliquer');
 %addpath('./comparison/')
 %addpath('./xmltree/');
-addpath(genpath('~/projects/chronux_2_10/'));
-addpath(genpath('~/projects/fma-toolbox/'));
+addpath(genpath('~/projects/ripple-detector/chronux_2_10/'));
+addpath(genpath('~/projects/ripple-detector/fma-toolbox/'));
 addpath('~/projects/matlab-incremented');
 
 addpath(fullfile(strRippleDir, 'sequences/'));
