@@ -68,13 +68,22 @@ classdef Event
             end
         end
 
-        function cellTrains = spikeTrains(this, vCells)
-            if nargin < 2
+        function cellTrains = spikeTrains(this, vCells, bShift)
+            if nargin < 2 || isempty(vCells)
                 vCells = 1 : max(activeCells(this));
             end
 
-            cellTrains = arrayfun(@this.firingTimes, ...
-                                  col(vCells), ...
+            if nargin < 3
+                bShift = false;
+            end
+
+            if bShift
+                fcnGetTrains = @(n) (firingTimes(this, n) - this.window(1));
+            else
+                fcnGetTrains = @this.firingTimes;
+            end
+
+            cellTrains = arrayfun(fcnGetTrains, col(vCells), ...
                                   'UniformOutput', false);
         end
 
