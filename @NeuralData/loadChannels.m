@@ -1,25 +1,18 @@
-%
 % USAGE:
-%
 %    loadChannels(this, nMain, nLow, nHigh)
 %
 % DESCRIPTION:
-%
 %    Load the specified LFP channels into memory
 %
 % ARGUMENTS:
-%
 %    nMain, nLow, nHigh (optional)
-%
 %       Integers specifying the 1-indexed LFP channels to load. If any of these
 %       is specified, all must be specified. See `NeuralData.setCurrentChannels`
 %       for more information.
 %
 % NOTES:
-%
 %    If LFP channels are not specified, then the method `setCurrentChannels`
 %    must be invoked first.
-%
 function loadChannels(this, nMain, nLow, nHigh)
     if nargin == 4
         this.setCurrentChannels(nMain, nLow, nHigh);
@@ -37,7 +30,7 @@ function loadChannels(this, nMain, nLow, nHigh)
     this.currentLfps = [];
 
     % Ensure that the folder that we're going to be saving to exists.
-    strLfpCacheDir = fullfile(this.cachePath, this.baseFileName, 'lfps');
+    strLfpCacheDir = fullfile(this.cachePath, 'lfps');
 
     if ~exist(strLfpCacheDir, 'dir')
         mkdir(strLfpCacheDir);

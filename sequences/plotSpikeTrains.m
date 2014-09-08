@@ -1,39 +1,25 @@
-%
 % USAGE:
-%
 %    plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors, bCompress)
 %
 % DESCRIPTION:
-%
 %    Plot the given spike trains
 %
 % ARGUMENTS:
-%
 %    cellTrains
-%
 %       The spike trains to plot as a cell array where each entry of the cell
 %       array represents one neuron's spike train. Each entry of this cell
 %       array should be a vector of doubles (time values).
-%
 %    vTimeWindow (default: based on `cellTrains`)
-%
 %       The window to display
-%
 %    vOrdering (default: `1 : length(cellTrains)`)
-%
 %       The ordering to use when displaying the neurons. This does not affect
 %       the color used to display a given spike train.
-%
 %    mtxColors (default: `lines()`)
-%
 %       A matrix with three columns, each row of which represents an RGB color.
 %       The colors will be used cyclically.
-%
 %    bCompress (default: `false`)
-%
 %       A boolean. If true, neurons that don't fire in the given time window
 %       will not take up vertical space.
-%
 function plotSpikeTrains(cellTrains, vTimeWindow, vOrdering, mtxColors, ...
                          bCompress, axPlot)
     % Set the default time window to be just as wide as it has to be.
