@@ -51,49 +51,79 @@ classdef NeuralData < handle
 
     methods (Access = public)
         %---------------------------------------------------------------
-        %
         % USAGE:
-        %
         %    obj = NeuralData()
         %
         % DESCRIPTION:
-        %
         %    Initialize a `NeuralData` object by loading from a specified
         %    data folder.
         %
         % ARGUMENTS:
-        %
+        %    uknDataPath
+        %       If a cell array:
+        %       - its first element is the directory containing the data
+        %       - its second element is the base recording name; there must be
+        %         a file named [uknDataPath '.dat'] in the data directory.
+        %       If a string, it is the directory containing the data; and the
+        %       base recording name is inferred from directory path.
         %    strPath
-        %
         %       The path to the folder in which the data resides
-        %
         %---------------------------------------------------------------
-        function this = NeuralData(strDataPath, strCachePath)
-            % Find the name of the recording.
-            cellFiles = findfiles(strDataPath, '^A\d{1,4}-\d{8}-\d{2}\.dat$');
+        function this = NeuralData(uknDataPath, strCachePath)
+            % Find the location of the .dat file for this recording.
+            if iscell(uknDataPath)
+                % Things are easy: A recording name was explicitly specified.
+                strDataDir = uknDataPath{1};
+                strDatFile = [uknDataPath{2} '.dat'];
+            elseif ischar(uknDataPath)
+                % A recording name wasn't specified explicitly, so we need to
+                % work a little harder.
+                strDataDir = uknDataPath;
 
-            assert(length(cellFiles) > 0, ...
-                   ['Please ensure that the data file matches the following ' ...
-                    'regular expression and that all other files start with ' ...
-                    'the same name (sans extension): ' ...
-                    '''^A\d{1,4}-\d{8}-\d{2}\.dat$''']);
+                % Find all .dat files in the specified directory.
+                cellDatFiles = findfiles(strDataDir, '\.dat$');
 
+                if length(cellDatFiles) == 1
+                    strDatFile = cellDatFiles{1};
+                elseif length(cellDatFiles) > 1
+                    strPrefix = commonprefix(cellDatFiles);
+                    [nMinLength, nIndex] = min(cellfun(@length, cellDatFiles));
+
+                    if length(strPrefix) == (nMinLength - 4)
+                        strDatFile = cellDatFiles{nIndex};
+                    end
+                end
+            else
+                error('NeuralData: unrecognized first input parameter');
+            end
+
+            % Ensure that we can find the data file in the data directory.
+            bFileExists = (exist('strDatFile', 'var') && ...
+                           exist(fullfile(strDataDir, strDatFile), 'file'));
+            assert(bFileExists, ...
+                   ['NeuralData: incorrect base recording name; ']);, ...
+                   ['see `help NeuralData` for more information']);
+
+            % If the file above exists, we know what the recording name is.
+            strRecording = strDatFile(1 : end - 4);
+
+            % Make sure that the cache exists.
             assert(logical(exist(strCachePath, 'dir')), ...
                    'Please ensure that the cache is a valid directory');
 
-            % We've found our data file. Extract the base file name from it.
-            strBaseFileName = cellFiles{1};
-            strBaseFileName = strBaseFileName(1 : end - 4);
+            % Store the folder and recording name in this object.
+            this.baseFolder = strDataDir;
+            this.baseFileName = strRecording;
+            this.cachePath = fullfile(strCachePath, strRecording);
 
-            % Store the folder and base filename in this object.
-            this.baseFolder = strDataPath;
-            this.baseFileName = strBaseFileName;
-            this.cachePath = strCachePath;
+            if ~exist(this.cachePath, 'dir')
+                mkdir(this.cachePath);
+            end
 
             % Load and store information about the data in this recording.
             this.strBehavElectrDataLFP = ...
-                fullfile(strDataPath, ...
-                         [strBaseFileName '_BehavElectrDataLFP.mat']);
+                fullfile(strDataDir, ...
+                         [strRecording '_BehavElectrDataLFP.mat']);
         end
     end
 
