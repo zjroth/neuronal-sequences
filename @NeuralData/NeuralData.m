@@ -251,5 +251,8 @@ classdef NeuralData < handle
         vIndices = getIndicesFromWindow(this, vTimeWindow, strUnits)
         dPeakFreq = getPeakFrequency(this, vTimeWindow, vFrequencyWindow, bWhiten)
         vPeakFreqs = getPeakFrequencies(this, mtxTimeWindows, vFrequencyWindow, cellSpectParams)
+
+        cellSequenceEvents = refineRippleSequences(this, cellRippleEvents, varargin)
+        nSection = getSection(this, objEvent)
     end
 end
