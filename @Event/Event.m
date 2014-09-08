@@ -114,5 +114,42 @@ classdef Event
             vOrder = vNeurons(vOrder);
         end
 
+        function mtxBias = bias(this, dTime, nMax)
+            if nargin < 2 || isempty(dTime)
+                dTime = Inf;
+            end
+
+            if nargin < 3
+                nMax = max(this.spikes);
+            end
+
+            % Initialize
+            vCells = activeCells(this);
+            nCells = length(vCells);
+            cellTrains = spikeTrains(this, vCells);
+            mtxCounts = sparse([], [], [], nMax, nMax, nCells^2);
+
+            % Count
+            for i = 1 : nCells - 1
+                n1 = vCells(i);
+                vTrain1 = cellTrains{i};
+
+                for j = i + 1 : nCells
+                    n2 = vCells(j);
+                    vTrain2 = cellTrains{j};
+
+                    mtxGaps = bsxfun(@minus, row(vTrain2), col(vTrain1));
+                    mtxCounts(n1, n2) = nnz((mtxGaps > 0) & (mtxGaps < dTime));
+                    mtxCounts(n2, n1) = nnz((mtxGaps < 0) & (mtxGaps > -dTime));
+                end
+            end
+
+            % Normalize
+            mtxBias = sparse(nMax, nMax);
+            mtxSum = mtxCounts + mtxCounts';
+            mtxDiff = mtxCounts - mtxCounts';
+            vLocs = find(mtxSum);
+            mtxBias(vLocs) = mtxDiff(vLocs) ./ mtxSum(vLocs);
+        end
     end
 end
