@@ -30,8 +30,9 @@ function cellSequenceEvents = refineRippleSequences(this, cellRippleEvents, vara
     %=======================================================================
 
     % Parse the named parameter list in `varargin`.
-    parseNamedParams('dIntraSequenceGap', 'dMaxDuration', 'nMinActive', ...
-                     'dEdgeBuffer', 'dSilenceBuffer');
+    cellValidParams = {'dIntraSequenceGap', 'dMaxDuration', 'nMinActive', ...
+                       'dEdgeBuffer', 'dSilenceBuffer'};
+    parseNamedParams(varargin, cellValidParams);
 
     %=======================================================================
     % Actual computations
@@ -118,20 +119,5 @@ function cellSequenceEvents = refineRippleSequences(this, cellRippleEvents, vara
 end
 
 function vSpikes = getSpikeTimes(this)
-    vSpikes = col(this.getSpike('res')) ./ sampleRate(this);
-end
-
-function objSpikeWave = getSpikeWave(this, objSharpWave)
-    % Retrieve the spikes and bin them by firing time. Then smooth the resultant
-    % signal.
-    nSamples = length(this.getTrack('eeg'));
-    vSpikes = getSpikeTimes(this);
-    vSpikeCounts = accumarray(vSpikes, 1, [nSamples, 1]);
-    vSpikeWave = conv(vSpikeCounts, gaussfilt(100, 5), 'same');
-    vSpikeWave = zscore(vSpikeWave);
-
-    objSpikeWave = TimeSeries( ...
-        vSpikeWave, (0 : nSamples - 1) ./ sampleRate(this));
-    objSpikeWave = subseries(objSpikeWave, objSharpWave.Time(1), ...
-                             objSharpWave.Time(end));
+    vSpikes = col(getSpike(this, 'res')) ./ sampleRate(this);
 end

@@ -1,4 +1,8 @@
 % rate = rawSampleRate(this)
 function rate = rawSampleRate(this)
-    rate = this.getXml('SampleRate');
+    if this.bOldBehavElectrData
+        rate = 20000;
+    else
+        rate = this.getXml('SampleRate');
+    end
 end

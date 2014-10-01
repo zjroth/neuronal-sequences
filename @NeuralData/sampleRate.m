@@ -1,4 +1,8 @@
 % rate = sampleRate(this)
 function rate = sampleRate(this)
-    rate = this.getXml('lfpSampleRate');
+    if ~this.bOldBehavElectrData
+        rate = getXml(this, 'lfpSampleRate');
+    else
+        rate = getXml(this, 'SamplingFrequency');
+    end
 end

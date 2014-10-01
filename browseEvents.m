@@ -1,35 +1,25 @@
-%
 % USAGE:
-%
 %    mtxModifiedEvents = browseEvents(objNeuralData, mtxEvents)
 %
 % DESCRIPTION:
-%
 %    Browse (and modify) the supplied list of events
 %
 % ARGUMENTS:
-%
 %    objNeuralData
-%
 %       A `NeuralData` object on which `setCurrentChannels` has been called
-%
 %    mtxEvents
-%
 %       A 2-column matrix of event times in seconds. The first column should
 %       contain starting times, and the second column should contain ending
 %       times. This must be nonempty.
 %
 % RETURNS:
-%
 %    mtxModifiedEvents
-%
 %       A matrix of the same form as the input `mtxEvents` containing the list
 %       of events once the GUI has been closed
-%
 function varargout = browseEvents(varargin)
     % Edit the above text to modify the response to help browseEvents
 
-    % Last Modified by GUIDE v2.5 24-Oct-2013 14:36:25
+    % Last Modified by GUIDE v2.5 14-Jul-2014 17:39:24
 
     % Begin initialization code - DO NOT EDIT
     gui_Singleton = 0;
@@ -135,6 +125,8 @@ function vWindow = getTimeWindow(handles)
         dPadding = dEventPadding / 1000;
       case 's'
         dPadding = dEventPadding;
+      case 'total (ms)'
+        dPadding = (dEventPadding / 1000 - diff(vEvent)) / 2;
     end
 
     % Now that we have the padding, we can compute the time window.
@@ -187,15 +179,25 @@ function browseEvents_OpeningFcn(hObject, eventdata, handles, varargin)
     % handles    structure with handles and user data (see GUIDATA)
     % varargin   command line arguments to browseEvents (see VARARGIN)
 
-    % Process `varargin`. The first argument should be a `NeuralData` object;
-    % the second should be a 2-column matrix of event times.
+    % The first input parameter should be a `NeuralData` object.
     handles.objNeuralData = varargin{1};
     handles.objLfps = getLfps(handles.objNeuralData);
     handles.objLfps.Data = bsxfun(@minus, handles.objLfps.Data, ...
                                   mean(handles.objLfps.Data, 1));
-    handles.mtxEvents = varargin{2};
-    handles.output = hObject;
 
+    % The second parameter should be a list of events, either as a 2-column
+    % matrix of event times or as a cell array of events.
+    if iscell(varargin{2})
+        mtxEvents = cell2mat(cellfun(@(e) e.window, varargin{2}, ...
+                                     'UniformOutput', false));
+    else
+        mtxEvents = varargin{2};
+    end
+
+    handles.mtxEvents = mtxEvents;
+
+    %
+    handles.output = hObject;
     handles.cellTrains = getSpikeTrains(handles.objNeuralData);
 
     %
@@ -256,7 +258,7 @@ function varargout = browseEvents_OutputFcn(hObject, eventdata, handles)
     % handles    structure with handles and user data (see GUIDATA)
 
     % Get default command line output from handles structure
-    varargout{1} = handles.mtxEvents;
+    varargout{1} = handles.figure1;
 
     % The figure can be deleted now
     %delete(handles.figure1);

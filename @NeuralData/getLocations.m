@@ -1,14 +1,14 @@
 % USAGE:
-%    mtxLocations = getSpikeLocations(this)
+%    mtxLocations = getLocations(this)
 %
 % DESCRIPTION:
-%    Get the locations (units in millimeters) of the animal when spikes occur
+%    Get the locations (units in millimeters) of the animal throughout the trial.
 %
 % RETURNS:
 %    mtxLocations
 %       A 2-column matrix whose rows represent positions with x and y
 %       coordinates being stored in the first and second columns, respectively.
-function mtxLocations = getSpikeLocations(this)
+function mtxPoints = getLocations(this)
     if this.bOldBehavElectrData
         strFieldX = 'X';
         strFieldY = 'Y';
@@ -17,5 +17,5 @@ function mtxLocations = getSpikeLocations(this)
         strFieldY = 'yMM';
     end
 
-    mtxPoints = [getSpike(this, strFieldX), getSpike(this, strFieldY)];
+    mtxPoints = [getTrack(this, strFieldX), getTrack(this, strFieldY)];
 end

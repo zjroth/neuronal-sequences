@@ -25,6 +25,17 @@ classdef NeuralData < handle
         xml = []
 
         smoothingRadius = 0.005;
+
+        default_ripple_params = { ...
+            'dMinSmoothedSpike'   , 1.3,            ...
+            'duration'            , [0.025, 0.250], ...
+            'minFirstDerivative'  , 2.75,           ...
+            'minRippleWave'       , -Inf,           ...
+            'minRippleWavePeak'   , -Inf,           ...
+            'minSecondDerivative' , 6,              ...
+            'minSeparation'       , 0.030,          ...
+            'minSharpWave'        , 1.25,           ...
+            'minSharpWavePeak'    , 4};
         ripples
 
         rawSampleTimes
@@ -37,6 +48,7 @@ classdef NeuralData < handle
     end
 
     properties (GetAccess = protected, SetAccess = protected)
+        bOldBehavElectrData = false;
         strBehavElectrDataLFP
 
         baseFolder
@@ -101,8 +113,8 @@ classdef NeuralData < handle
             bFileExists = (exist('strDatFile', 'var') && ...
                            exist(fullfile(strDataDir, strDatFile), 'file'));
             assert(bFileExists, ...
-                   ['NeuralData: incorrect base recording name; ']);, ...
-                   ['see `help NeuralData` for more information']);
+                   ['NeuralData: incorrect base recording name; ', ...
+                    'see `help NeuralData` for more information']);
 
             % If the file above exists, we know what the recording name is.
             strRecording = strDatFile(1 : end - 4);
@@ -122,8 +134,18 @@ classdef NeuralData < handle
 
             % Load and store information about the data in this recording.
             this.strBehavElectrDataLFP = ...
-                fullfile(strDataDir, ...
-                         [strRecording '_BehavElectrDataLFP.mat']);
+                fullfile(strDataDir, [strRecording '_BehavElectrDataLFP.mat']);
+
+            if ~exist(this.strBehavElectrDataLFP, 'file')
+                this.strBehavElectrDataLFP = ...
+                    fullfile(strDataDir, [strRecording '_BehavElectrData.mat']);
+
+                assert(logical(exist(this.strBehavElectrDataLFP, 'file')), ...
+                       'NeuralData: no *_BehavElectrDataLFP.mat file found');
+
+                this.bOldBehavElectrData = true;
+                this.xml = loadvar(this.strBehavElectrDataLFP, 'Par');
+            end
         end
     end
 
@@ -131,8 +153,7 @@ classdef NeuralData < handle
     methods (Access = public)
         function uknOut = getClu(this, strField)
             if isempty(this.Clu)
-                stctContents = load(this.strBehavElectrDataLFP, 'Clu');
-                this.Clu = stctContents.Clu;
+                this.Clu = loadvar(this.strBehavElectrDataLFP, 'Clu');
             end
 
             if nargin == 2
@@ -144,8 +165,7 @@ classdef NeuralData < handle
 
         function uknOut = getLaps(this, strField)
             if isempty(this.Laps)
-                stctContents = load(this.strBehavElectrDataLFP, 'Laps');
-                this.Laps = stctContents.Laps;
+                this.Laps = loadvar(this.strBehavElectrDataLFP, 'Laps');
             end
 
             if nargin == 2
@@ -157,8 +177,7 @@ classdef NeuralData < handle
 
         function uknOut = getSpike(this, strField)
             if isempty(this.Spike)
-                stctContents = load(this.strBehavElectrDataLFP, 'Spike');
-                this.Spike = stctContents.Spike;
+                this.Spike = loadvar(this.strBehavElectrDataLFP, 'Spike');
             end
 
             if nargin == 2
@@ -170,8 +189,7 @@ classdef NeuralData < handle
 
         function uknOut = getTrack(this, strField)
             if isempty(this.Track)
-                stctContents = load(this.strBehavElectrDataLFP, 'Track');
-                this.Track = stctContents.Track;
+                this.Track = loadvar(this.strBehavElectrDataLFP, 'Track');
             end
 
             if nargin == 2
@@ -183,8 +201,7 @@ classdef NeuralData < handle
 
         function uknOut = getXml(this, strField)
             if isempty(this.xml)
-                stctContents = load(this.strBehavElectrDataLFP, 'xml');
-                this.xml = stctContents.xml;
+                this.xml = loadvar(this.strBehavElectrDataLFP, 'xml');
             end
 
             if nargin == 2
@@ -199,90 +216,89 @@ classdef NeuralData < handle
             this.Laps = [];
             this.Spike = [];
             this.Track = [];
-            this.xml = [];
+            % this.xml = [];
         end
 
         function clearLfpData(this)
             this.currentLfps = [];
         end
+
+        function setDefaultRippleParams(this, cellNewDefaults)
+            hashParams = containers.Map( ...
+                this.default_ripple_params(1 : 2 : end), ...
+                this.default_ripple_params(2 : 2 : end));
+
+            cellNames = cellNewDefaults(1 : 2 : end);
+            cellValues = cellNewDefaults(2 : 2 : end);
+
+            for i = 1 : length(cellNames)
+                hashParams(cellNames{i}) = cellValues{i};
+            end
+
+            this.default_ripple_params = ...
+                row([row(keys(hashParams)); row(values(hashParams))]);
+        end
     end
 
     % Other methods
     methods (Access = public)
-        cellSpikeTimes = groupSpikes(this)
+        % Recording information
+        nNeurons = getNeuronCount(this)
+        n = numDataChannels(this)
+        rate = rawSampleRate(this)
+        rate = sampleRate(this)
+        dDuration = getRecordingDuration(this)
+        mtxLocations = getLocations(this)
+        mtxLocations = getSpikeLocations(this)
 
+        % Channels
         loadChannels(this, nMain, nLow, nHigh)
-
         objLfps = getLfps(this)
         [lfp, ch] = mainLfp(this, indices)
         [lfp, ch] = lowLfp(this, indices)
         [lfp, ch] = highLfp(this, indices)
+        plotLfps(this, varargin)
 
+        % Neuron-related
+        cellSpikeTimes = groupSpikes(this)
+        vOrdering = sortNeuronsInWindow(this, vTimeWindow, varargin)
+        trains = getSpikeTrains(this, bRemoveInterneurons)
+        detectInterneurons(this)
+        vInterneurons = getInterneurons(this)
+
+        % Ripple detection
+        ripples = detectRipples(this, varargin)
         sharpWave = getSharpWave(this, bDownsample);
         computeSharpWave(this);
         objRippleWave = getRippleWave(this, varargin);
-
         [spect, spectTimes, spectFrequencies] = getRippleSpectrogram(this, varargin);
 
-        nNeurons = getNeuronCount(this)
-        n = numDataChannels(this)
-
-        %plt = plotRipples(this, ...)
-        fig = plotRipplesVsSpikes(this, varargin)
-        hndl = plotRipple(this, nRipple, varargin)
-        plotRippleSpikeTrains(this, nRipple, varargin)
-
-        [ripples, stctIntermediate] = detectRipples(this, sharpWave, rippleWave, timeData, varargin)
-
-        rate = rawSampleRate(this)
-        rate = sampleRate(this)
-
-        vOrdering = sortNeuronsInWindow(this, vTimeWindow, varargin)
-        vOrdering = sortNeuronsForRipple(this, nRipple, varargin)
-
-        ripples = getRipples(this, rippleNums)
-        setRipple(this, rippleNum, vStartPeakEnd)
-        trains = getSpikeTrains(this, bRemoveInterneurons)
-        plotLfps(this, varargin)
-        vNearest = getNearestRipples(this, nRipple)
-
-        activeNeurons = getRippleActivity(this, nRipple)
-        nRipples = getRippleCount(this)
-        removeRipple(this, nRipple)
+        % Sequences retrieval
         [vSequence, vTimes] = getSequence(this, vTimeWindow, varargin)
         [cellSequences, cellTimes] = getSequences(this, mtxTimeWindows, bRemoveInterneurons)
-        vSequence = getRippleSequence(this, nRipple, bRemoveInterneurons)
-        cellSequences = getRippleSequences(this, varargin)
         cellSequences = getPlaceFieldSequences(this, varargin)
         cellSequences = getWheelSequences(this, varargin)
         [cellSequences, cellClassification] = getThetaSequences(this, varargin)
 
-        [mtxTimeWindows, cellClassification] = getThetaIntervals(this)
+        % Intervals retrieval
+        [mtxTimeWindows, cellClassification] = getThetaIntervals(this, bSliding)
         mtxTimeWindows = getWheelIntervals(this)
         [mtxTimeWindows, cellClassification] = getPlaceFieldIntervals(this)
 
+        % Events retrieval
+        ripples = getRipples(this, rippleNums)
         objEvent = getEvent(this, vTimeWindow, strClassification)
         cellEvents = getEvents(this, mtxTimeWindows, uknClassification)
         cellEvents = getPlaceFieldEvents(this);
-        cellEvents = getThetaEvents(this);
+        cellEvents = getThetaEvents(this, bSliding);
         cellEvents = getWheelEvents(this);
+        cellSequenceEvents = refineRippleSequences(this, cellRippleEvents, varargin)
 
-        modifyRipple(this, nRipple, nStartTime, nEndTime)
-        modifyRipples(this, varargin)
-
-        detectInterneurons(this)
-        vInterneurons = getInterneurons(this)
-
-        dDuration = getRecordingDuration(this)
-        mtxLocations = getSpikeLocations(this)
+        % Miscellaneous
         vPoint = getLocationsAtTime(this, dTime, strUnits)
         vSpeeds = getSpeedsAtTimes(this, vTimes, dWindowWidth, strUnits)
-
-        vIndices = getIndicesFromWindow(this, vTimeWindow, strUnits)
         dPeakFreq = getPeakFrequency(this, vTimeWindow, vFrequencyWindow, bWhiten)
         vPeakFreqs = getPeakFrequencies(this, mtxTimeWindows, vFrequencyWindow, cellSpectParams)
-
-        cellSequenceEvents = refineRippleSequences(this, cellRippleEvents, varargin)
         nSection = getSection(this, objEvent)
     end
 end

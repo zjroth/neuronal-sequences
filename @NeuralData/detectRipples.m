@@ -1,83 +1,50 @@
-%
 % USAGE:
-%
 %    ripples = detectRipples(this, ...)
 %
 % DESCRIPTION:
-%
 %    Detect sharp-wave ripples.
 %
 % ARGUMENTS:
-%
 %    sharpWave
 %       .
-%
 %    rippleWave
 %       .
 %
 % OPTIONAL PARAMETERS:
-%
 %    sampleRate (default: 2e4)
 %       .
-%
 %    duration (default: [0.025, 0.200])
 %       .
-%
 %    minSeparation (default: 0.030)
 %       .
-%
 %    minSharpWavePeak (default: 4)
 %       .
-%
 %    minSharpWave (default: 1.5)
 %       .
-%
 %    minRippleWavePeak (default: 2)
 %       .
-%
 %    minRippleWave (default: 1)
 %       .
-%
 %    minFirstDerivative (default: 3)
 %       .
-%
 %    minSecondDerivative (default: 3)
 %       .
-%
 %    dMinSmoothedSpike (default: 0)
 %       .
 %
 % RETURNS:
-%
 %    ripples
-%
 %       Matrix with entries in seconds and rows of the form [start, peak, end]
-%
-function [ripples, stctIntermediate] = detectRipples(this, varargin)
+function ripples = detectRipples(this, varargin)
     %=======================================================================
-    % Default optional parameter values
+    % Optional parameter values
     %=======================================================================
-
-    duration = [0.025, 0.200];
-    minSeparation = 0.030;
-
-    minSharpWavePeak = 2;
-    minSharpWave = 1.6;
-
-    minRippleWavePeak = 0;
-    minRippleWave = -Inf;
-
-    minFirstDerivative = 2.75;
-    minSecondDerivative = 2.9;
-
-    dMinSmoothedSpike = 0;
+    parseNamedParams(this.default_ripple_params);
+    parseNamedParams(varargin);
 
     %=======================================================================
     % Initialization and value-checking
     %=======================================================================
-
-    % Parse the named parameter list in `varargin`.
-    parseNamedParams();
 
     % Convert the time data into index data for the sharp-wave signal, which has
     % the same time data as the raw LFP data. Use this to extract the sharp-wave
@@ -163,24 +130,6 @@ function [ripples, stctIntermediate] = detectRipples(this, varargin)
     vSatisfiesSpikeWaveThresh = ...
         maxInIntervals(vSpikeWaveAboveThresh, ripples(:, [1, 3]));
 
-    % If a second output argument was requested, build a structure containing
-    % information about intermediate steps of the detection process.
-    if nargout == 2
-        stctIntermediate.mtxIntervals = (ripples(:, [1, 3]) - 1) / sampleRate(this) + objSharpWave.Time(1);
-        stctIntermediate.hasMinFirstDerivative = vSatisfiesFirstDerivativeThresh;
-        stctIntermediate.hasMinRippleWave = vSatisfiesRippleWaveThresh;
-        stctIntermediate.hasMinSharpWave = vSatisfiesSharpWaveThresh;
-        stctIntermediate.hasMinSpikeWave = vSatisfiesSpikeWaveThresh;
-
-        stctIntermediate.aboveSharpWaveThresh = vSharpWaveAboveMaxThresh;
-        stctIntermediate.aboveFirstDerivThresh = vFirstDerivativeAboveThresh;
-        stctIntermediate.aboveSpikeWaveThresh = vSpikeWaveAboveThresh;
-        stctIntermediate.aboveRippleWaveThresh = vRippleWaveAboveMaxThresh;
-
-        stctIntermediate.firstDerivative = firstDerivative;
-        stctIntermediate.secondDerivative = secondDerivative;
-    end
-
     % Keep only those ripples that satisfy all of the thresholds.
     ripples = ripples(vSatisfiesSharpWaveThresh ...
                       & vSatisfiesRippleWaveThresh ...
@@ -191,16 +140,18 @@ function [ripples, stctIntermediate] = detectRipples(this, varargin)
     % object.
     ripples = (ripples - 1) / sampleRate(this) + objSharpWave.Time(1);
     this.current.ripples = ripples;
+
+    this.current.ripples = getEvents(this, ripples(:, [1, 3]), 'ripple');
 end
 
 function vSpikes = getSpikeTimes(this)
-    vSpikes = col(this.getSpike('res'));
+    vSpikes = col(getSpike(this, 'res'));
 end
 
 function objSpikeWave = getSpikeWave(this, objSharpWave)
     % Retrieve the spikes and bin them by firing time. Then smooth the resultant
     % signal.
-    nSamples = length(this.getTrack('eeg'));
+    nSamples = length(getTrack(this, 'eeg'));
     vSpikes = getSpikeTimes(this);
     vSpikeCounts = accumarray(vSpikes, 1, [nSamples, 1]);
     vSpikeWave = conv(vSpikeCounts, gaussfilt(100, 5), 'same');

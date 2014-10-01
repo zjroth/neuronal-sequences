@@ -75,77 +75,34 @@ function dPeakFreq = getPeakFrequency(this, vTimeWindow, vFrequencyWindow, ...
     dPeakFreq = vFrequencies(nMaxIndex);
 end
 
+function [whiteV] = WhiteningNoOrdEst(v, p, arType)
+    % whiten the signal represented by vector v. This function does not
+    % estimate the order of AR model
+    %
+    % v:            vector to be whitened
+    % p:            the order of AR model
+    % arType:       1: using ARFIT for AR estimation
+    %               2: using BURG method for AR estimation
+    %
+    % whiteV:       whitened vector
 
-% %
-% % USAGE:
-% %
-% %    dPeakFreq = getPeakFrequency(this, vTimeWindow, vFrequencyWindow, ...
-% %                                 cellSpectParams)
-% %
-% % DESCRIPTION:
-% %
-% %    Get the peak frequency in the given ranges using a spectrogram.
-% %
-% % ARGUMENTS:
-% %
-% %    vTimeWindow
-% %
-% %       The time window in which to look for a peak frequency (a 2-entry vector)
-% %
-% %    vFrequencyWindow
-% %
-% %       A vector specifying the minimum and maximum frequencies (in Hertz) to
-% %       use while computing the peak. Note that the frequency range is further
-% %       restricted by the parameters used to compute the corresponding
-% %       spectrogram.
-% %
-% %    cellSpectParams
-% %
-% %       A cell array of parameters that will be used to compute the spectrogram
-% %       for this computation. See `help getRippleSpectrogram` for more
-% %       information.
-% %
-% % RETURNS:
-% %
-% %    dPeakFreq
-% %
-% %       The peak frequency (in Hertz) within the given windows
-% %
-% % NOTES:
-% %
-% %    If necessary, this computes a spectrogram with the given (or default)
-% %    parameters for the current main channel. If this spectrogram has not
-% %    been precomputed, calling this method could take quite a long time.
-% %
-% function dPeakFreq = getPeakFrequency(this, vTimeWindow, vFrequencyWindow, ...
-%                                       cellSpectParams)
-%     % Use the default spectrogram data by default
-%     if nargin < 4
-%         cellSpectParams = {};
-%     end
-%
-%     % Use all available frequencies by default.
-%     if nargin < 3 || isempty(vFrequencyWindow)
-%         vFrequencyWindow = [-Inf, Inf];
-%     end
-%
-%     % Retrieve the spectrogram.
-%     [mtxSpect, vSpectTimes, vSpectFreqs] = ...
-%         getRippleSpectrogram(this, cellSpectParams{:});
-%
-%     % Get the indices corresponding to the given time window. Note that the
-%     % indices extracted from this time window must correspond to the
-%     % spectrogram, not to some other signal such as the sharp-wave (though
-%     % this may in fact be the same). This assumes that the time window is
-%     % given in seconds.
-%     vTimeIndices = (vSpectTimes >= vTimeWindow(1) & ...
-%                     vSpectTimes <= vTimeWindow(2));
-%
-%     % Retrieve the requested frequency indices.
-%     vFreqIndices = (vSpectFreqs >= vFrequencyWindow(1) & ...
-%                     vSpectFreqs <= vFrequencyWindow(2));
-%
-%     % Find the peak frequency.
-%     vMaxFrequencyValues = max(mtxSpect(vFreqIndices, vTimeIndices), [], 2);
-%     [~, dPeakFreq] = max(vMaxFrequencyValues);
-% end
+    %%%%%%%%% check arguments
+    if nargin<2
+        disp('At least two arguments are needed for this function.');
+        return;
+    elseif nargin == 2
+        arType = 1; % by default, use ARFIT to estimate the parameters
+    elseif nargin > 3
+        disp('Too many input arguments.');
+        return;
+    end
+
+    if(arType == 1) % using arfit
+        [w,Atmp] = arfit(v,p,p);
+        A = [1 -Atmp];
+    else % using burg method
+        [w,A] = arburg(v,p);
+    end
+
+    whiteV = filter(A,1,v);
+end

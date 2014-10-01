@@ -8,10 +8,10 @@ function mtxRipples = getRipples(this, vRippleNums)
 
     % If no specific collection of ripples was collected, then we should just
     % return all of the ripples.
-    if ~exist('vRippleNums', 'var')
-        vRippleNums = (1 : size(this.current.ripples, 1));
+    if nargin < 2
+        vRippleNums = ':';
     end
 
     % Set the return variable.
-    mtxRipples = this.current.ripples(vRippleNums, :);
+    mtxRipples = this.current.ripples(vRippleNums);
 end

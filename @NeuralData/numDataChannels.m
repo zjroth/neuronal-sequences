@@ -1,3 +1,7 @@
 function n = numDataChannels(this)
-    n = this.getXml('nChannels');
+    if this.bOldBehavElectrData
+        n = getXml(this, 'totNch');
+    else
+        n = getXml(this, 'nChannels');
+    end
 end

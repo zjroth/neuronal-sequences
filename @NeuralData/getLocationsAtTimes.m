@@ -1,29 +1,19 @@
-%
 % USAGE:
-%
 %    mtxPoints = getLocationsAtTimes(this, vTimes, strUnits)
 %
 % DESCRIPTION:
-%
 %    Get the sequences of neuron firings in the given time windows
 %
 % ARGUMENTS:
-%
 %    vTimes
-%
 %       The times at which to retrieve location information
-%
 %    strUnits (default: 'seconds')
-%
 %       Any of the strings 'seconds', 'milliseconds', and 'indices'
 %
 % RETURNS:
-%
 %    mtxPoints
-%
 %       The requested locations as a 2-column matrix with x and y coordinates
 %       given in the first and second columns, respectively.
-%
 function mtxPoints = getLocationsAtTimes(this, vTimes, strUnits)
     if nargin < 3
         strUnits = 'seconds';
@@ -38,7 +28,6 @@ function mtxPoints = getLocationsAtTimes(this, vTimes, strUnits)
         vIndex = vTimes;
     end
 
-    vX = this.getTrack('xMM');
-    vY = this.getTrack('yMM');
-    mtxPoints = [vX(vIndex), vY(vIndex)];
+    mtxLocations = getLocations(this);
+    mtxPoints = mtxLocations(vIndex, :);
 end

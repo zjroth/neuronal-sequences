@@ -15,15 +15,14 @@
 %
 function dDuration = getRecordingDuration(this)
     if ~isempty(this.Track)
-        dDuration = length(this.Track.xMM) / sampleRate(this);
+        dDuration = length(getTrack(this, 'eeg')) / sampleRate(this);
     else
         strFile = fullfile(this.cachePath, 'duration.mat');
 
         if exist(strFile, 'file')
-            dDuration = getfield(load(strFile, 'dDuration'), 'dDuration');
+            dDuration = loadvar(strFile, 'dDuration');
         else
-            stctTrack = load(this.strBehavElectrDataLFP, 'Track');
-            dDuration = length(stctTrack.Track.xMM) / sampleRate(this);
+            dDuration = length(getTrack(this, 'eeg')) / sampleRate(this);
             save(strFile, '-v7.3', 'dDuration');
         end
     end

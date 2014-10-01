@@ -36,8 +36,17 @@ classdef Event
     end
 
     methods (Access = public)
+        function setType(this, strValue)
+            assert(@ischar, strValue, 'Event.setType: type value must be a string');
+            this.type = strValue;
+        end
+
         function vActive = activeCells(this)
             vActive = unique(sequence(this));
+        end
+
+        function vActive = numActive(this)
+            vActive = length(activeCells(this));
         end
 
         function vSequence = sequence(this)

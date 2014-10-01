@@ -13,6 +13,9 @@
 %    rewC = 9 (region-8)
 %    turnL = 10 (region-10)
 %    turnR = 11 (region-9)
+%
+% NOTE:
+%    This will not work with the "old" BehavElectrDataLFP files.
 function nSection = getSection(this, objEvent)
     % Determine which ripple events do not overlap with any place-field event.
     vSection = getTrack(this, 'mazeSect');

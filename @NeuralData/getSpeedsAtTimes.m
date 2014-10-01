@@ -59,7 +59,12 @@ function vSpeeds = getSpeedsAtTimes(this, vTimes, dWindowWidth, strUnits)
 
     % Expand the index windows into complete lists of indices, and then retrieve
     % the speeds and average them.
-    vRawSpeeds = this.getTrack('speed_MMsec');
+    if this.bOldBehavElectrData
+        vRawSpeeds = getTrack(this, 'speed');
+    else
+        vRawSpeeds = getTrack(this, 'speed_MMsec');
+    end
+
     nLength = length(vRawSpeeds);
 
     cellIndices = arrayfun(@(s) colon(s, s + nIndicesInWindow - 1), ...

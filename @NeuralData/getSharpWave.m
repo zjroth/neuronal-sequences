@@ -1,26 +1,12 @@
-%------------------------------------------------------------------------------
 % USAGE:
-%
 %    objSharpWave = getSharpWave(this)
 %
 % DESCRIPTION:
-%
-%    Compute a scaled sharp-wave signal based on the two provided LFPs.
-%
-% ARGUMENTS:
-%
-%    lowLfp
-%       .
-%
-%    highLfp
-%       .
+%    Compute a scaled sharp-wave signal based on the pre-selected LFPs
 %
 % RETURNS:
-%
 %    objSharpWave
 %       .
-%
-%------------------------------------------------------------------------------
 function objSharpWave = getSharpWave(this)
     if ~isfield(this.current, 'sharpWave')
         % Our sharp-wave signal will start off as the zscore signal of the
