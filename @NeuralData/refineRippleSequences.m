@@ -132,7 +132,3 @@ function cellSequenceEvents = refineRippleSequences(this, cellRippleEvents, vara
     cellSequenceEvents = cellSequenceEvents( ...
         cellfun(fcnIsGoodEvent, cellSequenceEvents));
 end
-
-function vSpikes = getSpikeTimes(this)
-    vSpikes = col(getSpike(this, 'res')) ./ sampleRate(this);
-end
