@@ -2,19 +2,34 @@
 %    cellSequenceEvents = refineRippleSequences(this, cellRippleEvents, varargin)
 %
 % DESCRIPTION:
-%    .
+%    Ripple detection is based on LFPs and does not consider the underlying
+%    neuronal spike times. Attempt to find the underlying sequences for the
+%    supplied list of ripples, discarding/joining events in an attempt to
+%    find only those sequences that seem to be clearly associated with a
+%    ripple event.
 %
 % ARGUMENTS:
-%    .
-%       .
+%    cellRippleEvents
+%       A cell array of ripple `Event`s
 %
 % OPTIONAL PARAMETERS:
-%    . (default: )
-%       .
+%    dIntraSequenceGap (default: 0.015)
+%       The maximum time (seconds) allowed between spikes within spikes (that
+%       aren't already contained in a ripple event)
+%    dMaxDuration (default: 0.250)
+%       The maximum duration (seconds) of a returned event
+%    nMinActive (default: 5)
+%       The minimum number of active neurons in a returned event
+%    dEdgeBuffer (default: 0.03)
+%       Expand the given ripple event windows by this much time (seconds) before
+%       searching for sequences
+%    dSilenceBuffer (default: 0.06)
+%       Demand relative silence (only isolated spikes) for this much time
+%       (seconds) on either side of a returned event
 %
 % RETURNS:
-%    .
-%       .
+%    cellSequenceEvents
+%       A cell array of `Event`s containing refined ripple sequences
 function cellSequenceEvents = refineRippleSequences(this, cellRippleEvents, varargin)
     %=======================================================================
     % Default optional parameter values
@@ -38,13 +53,13 @@ function cellSequenceEvents = refineRippleSequences(this, cellRippleEvents, vara
     % Actual computations
     %=======================================================================
 
-    %
-    vSequenceIndices = [];
+    % Get all of the spikes (neurons and times) that occur in this data set.
     [vEntireSequence, vAllSpikeTimes] = getSequence(this, [-Inf, Inf]);
 
     % We're joining two spikes into a single sequence if there is a short enough
     % period of time between them. This means that a sequence can be determined
-    % strictly from the list of spike times. Find this list of (inherent)
+    % strictly from the list of spike times (except that we later join sequences
+    % that overlap with a common ripple event). Find this list of (inherent)
     % sequence time windows.
     vSeparation = diff(vAllSpikeTimes);
     [mtxIntervals, vValues] = constant(vSeparation <= dIntraSequenceGap);
