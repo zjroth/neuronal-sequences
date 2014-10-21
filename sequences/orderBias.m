@@ -7,10 +7,12 @@
 %    functionality of `computeMu` isn't needed.
 %
 % ARGUMENTS:
-%
 %    vSeq
 %       The sequence for which to compute the order-bias matrix
-function mtxBias = orderBias(vSeq)
-    nMaxElt = max(vSeq);
+function mtxBias = orderBias(vSeq, nMaxElt)
+    if nargin < 2
+        nMaxElt = max(vSeq);
+    end
+
     mtxBias = computeMu(countOrderedPairs(vSeq, nMaxElt), computeN(vSeq, nMaxElt));
 end
