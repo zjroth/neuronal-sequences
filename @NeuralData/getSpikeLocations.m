@@ -17,5 +17,5 @@ function mtxLocations = getSpikeLocations(this)
         strFieldY = 'yMM';
     end
 
-    mtxPoints = [getSpike(this, strFieldX), getSpike(this, strFieldY)];
+    mtxLocations = [getSpike(this, strFieldX), getSpike(this, strFieldY)];
 end
