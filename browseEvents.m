@@ -181,39 +181,28 @@ function browseEvents_OpeningFcn(hObject, eventdata, handles, varargin)
 
     % The first input parameter should be a `NeuralData` object.
     handles.objNeuralData = varargin{1};
-    handles.objLfps = getLfps(handles.objNeuralData);
-    handles.objLfps.Data = bsxfun(@minus, handles.objLfps.Data, ...
-                                  mean(handles.objLfps.Data, 1));
 
     % The second parameter should be a list of events, either as a 2-column
     % matrix of event times or as a cell array of events.
     if iscell(varargin{2})
-        mtxEvents = cell2mat(cellfun(@(e) e.window, varargin{2}, ...
-                                     'UniformOutput', false));
+        mtxEvents = cell2mat(cellfcn(@(e) e.window, varargin{2}));
     else
         mtxEvents = varargin{2};
     end
 
     handles.mtxEvents = mtxEvents;
 
-    %
-    handles.output = hObject;
-    handles.cellTrains = getSpikeTrains(handles.objNeuralData);
-
-    %
+    % Store the LFPs for this data set. Downsample them to 1250 Hz, and
+    % center them (individually) locally at zero.
+    handles.objLfps = getLfps(handles.objNeuralData);
     handles.objLfps = TimeSeries(downsample(handles.objLfps.Data, 16), ...
                                  downsample(handles.objLfps.Time, 16));
-    nAveragingFilterLength = round(0.5 * sampleRate(handles.objNeuralData));
-    vAveragingFilter = ones(1, nAveragingFilterLength) ./ nAveragingFilterLength;
+    nFilterLength = 0.5 * sampleRate(handles.objNeuralData);
 
-    vLocalAverage = conv(handles.objLfps.Data(:, 1), vAveragingFilter, 'same');
-    handles.objLfps.Data(:, 1) = handles.objLfps.Data(:, 1) - vLocalAverage;
-
-    vLocalAverage = conv(handles.objLfps.Data(:, 2), vAveragingFilter, 'same');
-    handles.objLfps.Data(:, 2) = handles.objLfps.Data(:, 2) - vLocalAverage;
-
-    vLocalAverage = conv(handles.objLfps.Data(:, 3), vAveragingFilter, 'same');
-    handles.objLfps.Data(:, 3) = handles.objLfps.Data(:, 3) - vLocalAverage;
+    for i = 1 : 3
+        vLfp = handles.objLfps.Data(:, i);
+        handles.objLfps.Data(:, i) = vLfp - localmean(vLfp, nFilterLength);
+    end
 
     % Ensure that the event matrix has two columns and that there's at least one
     % event.
@@ -224,7 +213,11 @@ function browseEvents_OpeningFcn(hObject, eventdata, handles, varargin)
     % Initially, we want to display the first event.
     handles.nCurrentEvent = 1;
 
-    % Update handles structure
+    % We also want to know where spikes happen and what the GUI should output.
+    handles.cellTrains = getSpikeTrains(handles.objNeuralData);
+    handles.output = hObject;
+
+    % Update the `handles` structure for access elsewhere in the GUI.
     guidata(hObject, handles);
 
     % Update the display.
