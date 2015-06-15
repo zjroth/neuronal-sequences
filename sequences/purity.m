@@ -22,11 +22,11 @@
 %
 % ADDITIONAL INFOMRATION:
 %    The purity of a sequence is related to the (vector) magnitude of the
-%    corresponding pairwise-bias matrix. More specifically, the purity of a
-%    sequence s is the p-value of ||mu(s)|| in the collection {||mu(v)|| : v is
-%    a shuffling of s}. To ensure that sequences with one spike per neuron are
-%    regarded as significant, we compute the p-value as the proportion of the
-%    set with strictly larger magnitudes.
+%    corresponding skew-bias matrix. More specifically, the purity of a sequence
+%    s is the p-value of ||skewbias(s)||_F in the collection {||skewbias(v)||_F
+%    : v is a shuffling of s}. To ensure that sequences with one spike per
+%    neuron are regarded as significant, we compute the p-value as the
+%    proportion of the set with strictly larger magnitudes.
 function [dPurity, dMagnitude, vMagnitudes] = purity(vSequence, nTrials)
     if isempty(vSequence)
         dPurity = 0;
@@ -46,6 +46,6 @@ function [dPurity, dMagnitude, vMagnitudes] = purity(vSequence, nTrials)
 end
 
 function dMag = magnitude(vSeq)
-    mtxBias = triu(orderBias(vSeq), 1);
-    dMag = sqrt(sum(sum(mtxBias.^2)));
+    mtxBias = triu(skewbias(vSeq), 1);
+    dMag = norm(mtxBias(:));
 end

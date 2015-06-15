@@ -1,5 +1,5 @@
-% mtxSeqs = toMatrix(cellSeqs)
-function mtxSeqs = toMatrix(cellSeqs, nMaxElt)
+% mtxSeqs = activitymatrix(cellSeqs)
+function mtxSeqs = activitymatrix(cellSeqs, nMaxElt)
     % Store the number of sequences, and compute the maximum neuron
     % value that is involved in any of the provided sequences.
     nSeqs = length(cellSeqs);

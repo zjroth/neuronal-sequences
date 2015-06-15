@@ -1,8 +1,5 @@
-%
 % DESCRIPTION:
-%
 %    A container for neural events and related data.
-%
 classdef Event
     properties (GetAccess = public, SetAccess = private)
         window, spikes, times, type
@@ -45,8 +42,8 @@ classdef Event
             vActive = unique(sequence(this));
         end
 
-        function vActive = numActive(this)
-            vActive = length(activeCells(this));
+        function nActive = numActive(this)
+            nActive = length(activeCells(this));
         end
 
         function vSequence = sequence(this)
@@ -96,30 +93,89 @@ classdef Event
                                   'UniformOutput', false);
         end
 
-        function plot(this, varargin)
-            plotSpikeTrains(spikeTrains(this), this.window, varargin{:});
+        % USAGE:
+        %    plot(this, ...)
+        %
+        % DESCRIPTION:
+        %    Create a spike-raster plot for the given event.
+        %
+        % OPTIONAL PARAMETERS:
+        %    vOrdering (default: `activeCells(this)`)
+        %       The ordering to use when displaying the neurons. This does not affect
+        %       the color used to display a given spike train.
+        %    mtxColors (default: `lines()`)
+        %       A three-column matrix, each row of which represents an RGB color.
+        %       The colors will be used cyclically.
+        %    axPlot (default: `gca()`)
+
+            % Optional parameters
+            vOrdering = activeCells(this);
+            mtxColors = lines();
+            axPlot = gca();
+
+            cellAllowedParams = {'axPlot', 'vOrdering', 'mtxColors'};
+            parseNamedParams(varargin, cellAllowedParams);
+
+            % Store the number of colors that we have to work with.
+            nColors = size(mtxColors, 1);
+
+            % Clear the current axes. Also, since each train will be plotted
+            % individually, we need to tell matlab not to overwrite what has already
+            % been plotted.
+            cla(axPlot);
+            hold('on');
+
+            % For each neuron's spike train, plot that spike train along a horizontal
+            % line.
+            nNumPlotted = 0;
+
+            for j = 1 : length(vOrdering)
+                % Extract the current neuron number. Get the spike train for the current neuron.
+                nCurrNeuron = vOrdering(j);
+                vTrain = cellTrains{nCurrNeuron};
+
+                % Only plot something if there are spike to plot.
+                if ~isempty(vTrain)
+                    % The color of this spike train is determined by the actual neuron
+                    % number, but the height of the plotted spike train is determined by the
+                    % number of already-plotted trains.
+                    vSpikeColor = mtxColors(mod(nCurrNeuron - 1, nColors) + 1, :);
+                    plot(axPlot, vTrain, j * ones(size(vTrain)), ...
+                         '.', 'Color', vSpikeColor);
+                end
+            end
+
+            % Now that everything has been plotted, tidy up.
+            hold('off');
+            xlim(this.window);
+            ylim([0, length(vOrdering) + 1]);
+            set(gca, 'YTickLabel', []);
         end
 
         function plotSequence(this, varargin)
-            % Create a new `Event` whose time information has been replaced
-            % by an ordering.
+            % Create a new `Event` whose time information has been replaced by an
+            % ordering. Then just plot the new `Event`.
             nLength = length(this);
             evtSequence = Event([1, nLength], 1 : nLength, sequence(this));
 
-            % Now just plot the new `Event`.
             plot(evtSequence, varargin{:});
         end
 
-        function vOrder = orderCells(this)
+        function vOrder = centerofmass(this)
             vSequence = sequence(this);
-            vNeurons = unique(sequence(this));
-            vCentersOfMass = zeros(size(vNeurons));
+            vNeurons = activeCells(this);
+            nNeurons = length(vNeurons);
+            vCentersOfMass = zeros(nNeurons, 1);
 
-            for i = 1 : length(vNeurons)
+            for i = 1 : nNeurons
                 vCentersOfMass(i) = mean(find(vSequence == vNeurons(i)));
             end
 
-            [~, vOrder] = sort(vCentersOfMass);
+            vCentersOfMass = (2 * vCentersOfMass - 1) / length(vSequence) - 1;
+        end
+
+        function vOrder = orderCells(this)
+            [~, vOrder] = sort(centerofmass(this));
             vOrder = vNeurons(vOrder);
         end
 

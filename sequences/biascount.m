@@ -1,38 +1,28 @@
-%
 % USAGE:
-%
-%    mtxCounts = countOrderedPairs(vSequence, nMax)
+%    mtxCounts = biascount(vSequence, nMax)
 %
 % DESCRIPTION:
-%
 %    Compute the number of times that the pair (i, j) occurs in order in the
 %    given sequence.
 %
 % ARGUMENTS:
-%
 %    vSequence
-%
 %       The input sequence as a vector of positive indices
-%
 %    nMax
-%
 %       The total number of neurons in consideration; this will determine the
 %       size of the output matrix
 %
 % RETURNS:
-%
 %    mtxCounts
-%
 %       A sparse matrix, the (i, j) entry of which will contain the number of
 %       times that neuron j fires after neuron i; the diagonal of this matrix
 %       will always be zero (by definition of the function, not of the above
 %       procedure).
 %
 % EXAMPLE:
-%
 %    >> v = [1, 3, 2, 2, 4, 2, 1];
 %    >> n = 5;
-%    >> full(countOrderedPairs(v, n))
+%    >> full(biascount(v, n))
 %
 %    ans =
 %
@@ -41,8 +31,7 @@
 %         1     3     0     1     0
 %         1     1     0     0     0
 %         0     0     0     0     0
-%
-function mtxCounts = countOrderedPairs(vSequence, nMax)
+function mtxCounts = biascount(vSequence, nMax)
     % Find the unique elements of the sequence.  This is much faster than
     % calling `unique(vSequence)`.
     vNeurons = zeros(1, nMax);

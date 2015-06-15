@@ -2,7 +2,7 @@
 % - build a matrix of event times
 % - build a vector vColln mapping events to the corresponding spike-train
 %   collection number
-% - Call plotSpikeTrains(cellTrainCollns(vColln(x)), vEvents(x, :)
+% - Call spikeraster(cellTrainCollns(vColln(x)), vEvents(x, :)
 
 
 
@@ -30,22 +30,22 @@ function compareSpikeTrains(cellTrainCollns, mtxEvents, vCollnNums, ...
     figure();
 
     subplot(2, 2, 1);
-    plotSpikeTrains(cellXTrains, ...
+    spikeraster(cellXTrains, ...
         vTimeWindowX, vNeuronOrderX, 'bRemoveInterneurons', true);
     title('Sequence 1 (ideal ordering)');
 
     subplot(2, 2, 2);
-    plotSpikeTrains(cellXTrains, ...
+    spikeraster(cellXTrains, ...
         vTimeWindowX, vNeuronOrderY, 'bRemoveInterneurons', true);
     title('Sequence 1 (ideal ordering for sequence 2)');
 
     subplot(2, 2, 3);
-    plotSpikeTrains(cellYTrains, ...
+    spikeraster(cellYTrains, ...
         vTimeWindowY, vNeuronOrderX, 'bRemoveInterneurons', true);
     title('Sequence 2 (ideal ordering for sequence 1)');
 
     subplot(2, 2, 4);
-    plotSpikeTrains(cellYTrains, ...
+    spikeraster(cellYTrains, ...
         vTimeWindowY, vNeuronOrderY, 'bRemoveInterneurons', true);
     title('Sequence 2 (ideal ordering)');
 end

@@ -13,13 +13,13 @@ function [mtxRho, vIncluded] = computeRhoMatrix(cellSequences, vNumActiveNeurons
     % sequences to be processed to those with an appropriate number of active
     % neurons. Keep track of which sequences are to be included, and store the
     % total number of sequences that we'll be working with.
-    vSeqSetSizes = sum(toMatrix(cellSequences), 2);
+    vSeqSetSizes = sum(activitymatrix(cellSequences), 2);
     vIncluded = find(vNumActiveNeurons(1) <= vSeqSetSizes & vSeqSetSizes <= vNumActiveNeurons(2));
     nSequences = length(vIncluded);
 
     % Find the neuron activity for each sequence and the number of neurons that
     % are active in each pair of sequences.
-    mtxNeuronActivity = toMatrix(cellSequences(vIncluded));
+    mtxNeuronActivity = activitymatrix(cellSequences(vIncluded));
     mtxNumCoactive = mtxNeuronActivity * mtxNeuronActivity';
 
     % Store the total number of neurons.
@@ -31,7 +31,7 @@ function [mtxRho, vIncluded] = computeRhoMatrix(cellSequences, vNumActiveNeurons
     cellMu = cell(nSequences, 1);
 
     for i = 1 : nSequences
-        cellPairCounts{i} = countOrderedPairs(cellSequences{vIncluded(i)}, nNeurons);
+        cellPairCounts{i} = skewbias(cellSequences{vIncluded(i)}, nNeurons);
         cellN{i} = computeN(cellSequences{vIncluded(i)}, nNeurons);
         cellMu{i} = computeMu(cellPairCounts{i}, cellN{i});
     end

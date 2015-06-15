@@ -14,8 +14,8 @@ function vDistribution = computeRhoDistribution(vSeq1, vSeq2, nTrials)
 
     % For each trial, compute rho between shuffles of each sequence.
     for i = 1 : nTrials
-        mtxMu1 = computeMu(countOrderedPairs(shuffle(vSeq1), nMax), vN1);
-        mtxMu2 = computeMu(countOrderedPairs(shuffle(vSeq2), nMax), vN2);
+        mtxMu1 = computeMu(biascount(shuffle(vSeq1), nMax), vN1);
+        mtxMu2 = computeMu(biascount(shuffle(vSeq2), nMax), vN2);
 
         vDistribution(i) = computeRho(mtxMu1, mtxMu2, vCoactive);
     end

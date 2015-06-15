@@ -1,9 +1,7 @@
 % USAGE:
-%
 %    nMaxElt = maxActive(cellSeqs)
 %
 % DESCRIPTION:
-%
 %    Find the maximum active element in a list (cell array) of
 %    sequences.
 function nMaxElt = maxActive(cellSeqs)

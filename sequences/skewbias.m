@@ -1,5 +1,5 @@
 % USAGE:
-%    mtxBias = orderBias(vSeq)
+%    mtxBias = skewbias(vSeq)
 %
 % DESCRIPTION:
 %    Compute the order-bias matrix (i.e., the "mu" matrix) for the given
@@ -9,10 +9,10 @@
 % ARGUMENTS:
 %    vSeq
 %       The sequence for which to compute the order-bias matrix
-function mtxBias = orderBias(vSeq, nMaxElt)
+function mtxBias = skewbias(vSeq, nMaxElt)
     if nargin < 2
         nMaxElt = max(vSeq);
     end
 
-    mtxBias = computeMu(countOrderedPairs(vSeq, nMaxElt), computeN(vSeq, nMaxElt));
+    mtxBias = computeMu(biascount(vSeq, nMaxElt), computeN(vSeq, nMaxElt));
 end

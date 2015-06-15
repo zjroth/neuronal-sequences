@@ -1,7 +1,7 @@
 function [mtxP, mtxCounts] = computePValues(cellSeqs, nTrials)
     % Find which neurons are active in each sequence, and compute the number
     % of neurons that are active in each pair of sequences.
-    mtxActivity = toMatrix(cellSeqs);
+    mtxActivity = activitymatrix(cellSeqs);
     mtxNumCoactive = mtxActivity * mtxActivity.';
 
     % Store the number of sequences.
