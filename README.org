@@ -1,0 +1,50 @@
+This code is designed to provide tools for working with neuronal sequences. The
+project started originally as a set of functions to detect sharp-wave ripples in
+the hippocampus. The code breaks down into three basic pieces:
+- The =sequences= folder: At the core of this project, the aim was to analyze
+  neuronal sequences. Our concept of a sequence is simply a list of spikes.
+  Because we discard timing information from the spike trains, the techniques
+  implemented here are agnostic of the timescale on which such a sequence was
+  actually recorded.
+- The =Event= class: An =Event= is a convenience class that was designed (1) to
+  store a sequence and additional information about its origin in a recording
+  and (2) to bundle together functions for working with sequences.
+- The =NeuralData= class: A =NeuralData= object is our interface to the raw data
+  from a neural recording. This class provides functions for retrieving
+  recording information, extracting LFPs, and detecting various event types,
+  among some other convenience functions.
+The sections below describe each of these pieces in more detail along with some
+basic examples of how to use this project. This project is dependent on some
+additional functionality found in the [[https://bitbucket.org/zjroth/matlab-incremented/][matlab-incremented]] project.
+
+* Sequences
+
+Since a sequence as we have it defined is just a list of spikes (i.e., neurons),
+each sequence represented in this project as a vector.
+
+* Events
+
+When dealing with sequences in real data, it is often necessary for purposes of
+analysis to know more about each sequence. In concept, an event is all of the
+information about a recording that occurs within some time window; as such, the
+=Event= object class stores this time window. However, extracting information
+from a =NeuralData= object can be time-consuming; so this class also stores some
+additional information. The members of this class are listed below:
+- =window= :: This parameter stores the time window during which an event
+              occurs. It is stored as a vector of the form =[start, end]=. For
+              consistency regardless of the sampling rate of a recording, this
+              is stored with units of seconds.
+- =spikes= :: This parameter stores the list of spikes that occur during an
+              event. That is, =spikes= is the neuronal sequence contained within
+              an =Event= object.
+- =times= :: This parameter stores the times corresponding to the event's
+             spikes.
+- =type= :: This parameter allows the user to label each event as some specific
+            type. A type can be an arbitrary string.
+Though an =Event= can be created manually, it is often most useful in that
+several methods of the =NeuralData= class return (lists of) events.
+
+* Interfacing with real data
+
+The code in the =NeuralData= class was originally designed to provide
+functionality for detecting sharp-wave ripples in LFP signals.
