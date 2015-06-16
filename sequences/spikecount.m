@@ -1,4 +1,4 @@
-function N = computeN(vSeq, nMax)
+function N = spikecount(vSeq, nMax)
     if isempty(vSeq)
         N = sparse(nMax, 1);
     else

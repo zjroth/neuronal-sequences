@@ -9,8 +9,8 @@ function vDistribution = computeRhoDistribution(vSeq1, vSeq2, nTrials)
 
     % The count of neurons in a sequence doesn't change when the sequence is
     % shuffled.
-    vN1 = computeN(vSeq1, nMax);
-    vN2 = computeN(vSeq2, nMax);
+    vN1 = spikecount(vSeq1, nMax);
+    vN2 = spikecount(vSeq2, nMax);
 
     % For each trial, compute rho between shuffles of each sequence.
     for i = 1 : nTrials

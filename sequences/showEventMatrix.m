@@ -1,45 +1,27 @@
-%
 % USAGE:
-%
 %    showEventMatrix(mtxCorrVals, mtxP, dThresh, vGroupSizes, fcnOnClick)
 %
 % DESCRIPTION:
-%
 %    .
 %
 % ARGUMENTS:
-%
 %    mtxP
-%
 %       A matrix of p values to display
-%
 %    cellSpikeSeries
-%
 %       A cell array of cell arrays of `SpikeSeries` objects
 %
 % NAMED PARAMETERS:
-%
 %    dMaxP (default: 0.05)
-%
 %       All p values greater than or equal to this are not shown
-%
 %    fcnOnClick (default: nothing)
-%
 %       A function that takes two parameters, the x and y values of the pixel
 %       that is selected on a user's click
-%
 %    vGroupSizes (default: [])
-%
 %       This is ignored if `cellSpikeSeries` is a cell array of cell arrays
-%
 %    mtxColorMap (default: `flipud(jet(64))`)
-%
 %       A 3-column matrix of RGB colors to use as the color map
-%
 %    mtxSigns (default: all ones)
-%
 %       .
-%
 function showEventMatrix(mtxP, cellSpikeSeries, varargin)
     % Get set the default parameter values.
     dMaxP = 0.05;

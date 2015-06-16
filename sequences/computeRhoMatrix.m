@@ -32,7 +32,7 @@ function [mtxRho, vIncluded] = computeRhoMatrix(cellSequences, vNumActiveNeurons
 
     for i = 1 : nSequences
         cellPairCounts{i} = skewbias(cellSequences{vIncluded(i)}, nNeurons);
-        cellN{i} = computeN(cellSequences{vIncluded(i)}, nNeurons);
+        cellN{i} = spikecount(cellSequences{vIncluded(i)}, nNeurons);
         cellMu{i} = computeMu(cellPairCounts{i}, cellN{i});
     end
 

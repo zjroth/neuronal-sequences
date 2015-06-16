@@ -14,5 +14,5 @@ function mtxBias = skewbias(vSeq, nMaxElt)
         nMaxElt = max(vSeq);
     end
 
-    mtxBias = computeMu(biascount(vSeq, nMaxElt), computeN(vSeq, nMaxElt));
+    mtxBias = computeMu(biascount(vSeq, nMaxElt), spikecount(vSeq, nMaxElt));
 end
