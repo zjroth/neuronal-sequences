@@ -1,3 +1,5 @@
+#+LATEX_HEADER: \usepackage[margin=1in]{geometry}
+
 This code is designed to provide tools for working with neuronal sequences. The
 project started originally as a set of functions to detect sharp-wave ripples in
 the hippocampus. The code breaks down into three basic pieces:
@@ -20,7 +22,71 @@ additional functionality found in the [[https://bitbucket.org/zjroth/matlab-incr
 * Sequences
 
 Since a sequence as we have it defined is just a list of spikes (i.e., neurons),
-each sequence represented in this project as a vector.
+each sequence represented in this project as a vector. As such, many MATLAB
+functions for vectors can come in handy. For instance, the collection of neurons
+that are active in a sequence =s= can be found with =unique(s)=.
+#+BEGIN_SRC matlab :session :exports none :results silent
+  cd ~/data/analysis/
+  init_analysis_workspace
+#+END_SRC
+#+BEGIN_SRC matlab :session :results output :exports both
+  s = [1, 2, 1, 3, 2, 2, 4, 3, 3, 4]
+  unique(s)
+#+END_SRC
+A few sequence-specific functions have been written where there was no
+equivalent for vectors. The spike-count vector can be computed with
+=spikecount=, and the index sets where neurons spike can be extracted with
+=spikesets=.
+#+BEGIN_SRC matlab
+  spikecount(s)
+  spikesets(s)
+#+END_SRC
+To visualize =s=, create a spike-raster plot.
+#+BEGIN_SRC matlab
+  spikeraster(s)
+#+END_SRC
+#+BEGIN_SRC matlab :session :results file :exports results
+  figure('visible', 'off');
+  spikeraster(s);
+  print('tmp.png', '-dpng');
+  'tmp.png';
+#+END_SRC
+The center-of-mass ordering of a sequence =s= can be computed with
+=sortneurons(s)=.
+#+BEGIN_SRC matlab :session :results output :exports both
+  sortneurons(s)
+#+END_SRC
+The bias-count and skew-bias matrices of =s= can be computed with =biascount(s)=
+and =skewbias(s)=, respectively. Both of these functions return a sparse matrix.
+#+BEGIN_SRC matlab :session :results output :exports both
+  full(biascount(s))
+  full(skewbias(s))
+#+END_SRC
+The spikes of a sequence can be permuted to be in a random order using
+=shuffle=.
+#+BEGIN_SRC matlab :session :results output :exports both
+  u = shuffle(s)
+#+END_SRC
+To compute the correlation between sequences, use =correlation=.
+#+BEGIN_SRC matlab :session :results output :exports both
+  correlation(s, u)
+#+END_SRC
+For a list =L1= of sequences (i.e., a vector cell array), use =activity(L1)= to
+return a matrix in which row =i= is an indicator vector for the set of neurons
+that are active in =L{i}=.
+#+BEGIN_SRC matlab :session :results output :exports both
+  randseq = @(~) randi(5, 1, 3);
+  L1 = arrayfcn(randseq, zeros(3, 1));
+  L1{:}
+  activity(L1)
+#+END_SRC
+With a second list =L2= of sequences, the number of neurons that each pair of
+sequences has in common can be found with =coactivity(L1, L2)=.
+#+BEGIN_SRC matlab :session :results output :exports both
+  L2 = arrayfcn(randseq, zeros(3, 1));
+  L2{:}
+  coactivity(L1, L2)
+#+END_SRC
 
 * Events
 
@@ -48,3 +114,56 @@ several methods of the =NeuralData= class return (lists of) events.
 
 The code in the =NeuralData= class was originally designed to provide
 functionality for detecting sharp-wave ripples in LFP signals.
+- TODO: The current setup requires a =.dat= file with a specific naming
+  convention. It also requires a =*_BehavElecDataLFP.mat= file and some of its
+  kin. This should be updated so that these extra files are not necessary. In
+  the meantime, mention these sisues and direct the user to the github page. As
+  an intermediate step, perhaps add a function for generating these files. Make
+  the =.dat= file optional if a cache directory exists. Use =.res= (etc.) files
+  instead of the =*_BehavElecDataLFP.mat= file.
+For the sake of example, suppose that the directory =A111-20150701= contains the
+files =A111-20150701.dat= and =A111-20150701_BehavElecDataLFP.mat=. Also, assume
+that =cache= is a directory. We can create a =NeuralData= object by specifying
+the data and cache directories.
+#+BEGIN_SRC matlab
+  nd = NeuralData('A111-20150701', 'cache');
+#+END_SRC
+We can now extract various kinds of information from the object =nd=. To detect
+SWR events, three channels need to be selected by hand using an external tool.
+Once the channels have been selected, load them with =loadChannels=.
+#+BEGIN_SRC matlab
+  loadChannels(nd)
+#+END_SRC
+The SWR events can now be detected with =detectRipples=.
+#+BEGIN_SRC matlab
+  cellRipples = detectRipples(nd);
+#+END_SRC
+The output of this method is a cell array of =Event= objects. These events can
+be visualized with =browseEvents=.
+#+BEGIN_SRC matlab
+  browseEvents(nd, cellRipples)
+#+END_SRC
+- TODO: The functions =browseEvents= and =browseSequences= should be
+  modified/combined. The new =browseEvents= should have signature
+  =browseEvents(cellEvents, <nd>)= and only plot the spike-raster plot if no
+  =NeuralData= object is provided. The new =browseSequences= should be
+  =browseSequences(cellSeqs) = browseEvents(cellfcn(@seq2evt, cellSeq))=.
+The locations of the animal in the track at a particular list of times can be
+retrieved with the methods =getLocationsAtTimes=. For instance, we might want to
+know where ripples occurred in the track. To do this, we will need a single time
+to represent each event. Let's choose the starting time of the events.
+#+BEGIN_SRC matlab
+  vTimes = cellfun(@startTime, cellRipples);
+  mtxLocs = getLocationsAtTimes(nd, vTimes);
+#+END_SRC
+We can now visualize where the ripples occur on the track.
+#+BEGIN_SRC matlab
+  vWinX = minmax(mtxLocs(:, 1));
+  vWinY = minmax(mtxLocs(:, 2));
+  dStd = 0.1 * min(diff(vWinX), diff(vWinY));
+  nResolution = 1000;
+
+  imagesc(psth2d(mtxLocs, vWinX, vWinY, dStd, nResolution))
+#+END_SRC
+Many other =NeuralData= methods exist for extraction of recording information
+and event information.
