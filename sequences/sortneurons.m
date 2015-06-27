@@ -1,9 +1,10 @@
-% vOrdering = sortNeurons(cellSpikeTrains, varargin)
-function vOrdering = sortNeurons(cellSpikeTrains, bRestrictToActive)
+% vOrdering = sortneurons(cellSpikeTrains, varargin)
+function vOrdering = sortneurons(vSeq, bRestrictToActive)
     if nargin < 2
         bRestrictToActive = true;
     end
 
+    cellSpikeTrains = spikesets(vSeq);
     nNeurons = length(cellSpikeTrains);
     vCentersOfMass = zeros(nNeurons, 1);
 

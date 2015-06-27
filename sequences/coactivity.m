@@ -24,7 +24,7 @@ function [mtxCoactive, mtxActivityX, mtxActivityY] = coactivity(cellSeqsX, cellS
     end
 
     nNeurons = maxActive([cellSeqsX(:); cellSeqsY(:)]);
-    mtxActivityX = activitymatrix(cellSeqsX, nNeurons);
-    mtxActivityY = activitymatrix(cellSeqsY, nNeurons);
+    mtxActivityX = activity(cellSeqsX, nNeurons);
+    mtxActivityY = activity(cellSeqsY, nNeurons);
     mtxCoactive = mtxActivityY * mtxActivityX.';
 end

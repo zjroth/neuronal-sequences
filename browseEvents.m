@@ -1,5 +1,5 @@
 % USAGE:
-%    mtxModifiedEvents = browseEvents(objNeuralData, mtxEvents)
+%    mtxModifiedEvents = browseEvents(objNeuralData, cellEvents)
 %
 % DESCRIPTION:
 %    Browse (and modify) the supplied list of events
@@ -7,15 +7,13 @@
 % ARGUMENTS:
 %    objNeuralData
 %       A `NeuralData` object on which `setCurrentChannels` has been called
-%    mtxEvents
-%       A 2-column matrix of event times in seconds. The first column should
-%       contain starting times, and the second column should contain ending
-%       times. This must be nonempty.
+%    cellEvents
+%       A vector cell array of `Event` objects. This must be nonempty.
 %
 % RETURNS:
-%    mtxModifiedEvents
-%       A matrix of the same form as the input `mtxEvents` containing the list
-%       of events once the GUI has been closed
+%    cellModifiedEvents
+%       A vector cell array of `Event` objects containing the list of
+%       events once the GUI has been closed
 function varargout = browseEvents(varargin)
     % Edit the above text to modify the response to help browseEvents
 
@@ -44,7 +42,7 @@ end
 function updateGui(handles)
     % Retrive the event times and the time window to use when displaying the
     % event.
-    vEvent = handles.mtxEvents(handles.nCurrentEvent, :);
+    vEventWindow = getWindow(handles.cellEvents{handles.nCurrentEvent});
     vTimeWindow = getTimeWindow(handles);
 
     % Plot the main ripple events over the LFP-triple.
@@ -62,15 +60,14 @@ function updateGui(handles)
     xlim(vTimeWindow);
     set(handles.axEvent, 'Color', [1, 1, 1]);
 
-    PlotIntervals(vEvent, 'rectangles');
+    PlotIntervals(vEventWindow, 'rectangles');
 
     axes(handles.axSpikes);
-    plotSpikeTrains(handles.cellTrains, vTimeWindow, [], [], false, ...
-                    handles.axSpikes);
+    evtWindow = getEvent(handles.objNeuralData, vTimeWindow);
+    plot(evtWindow, 'vOrdering', orderCells(evtWindow));
     set(handles.axEvent, 'Layer', 'top');
-    xlim(vTimeWindow);
     set(handles.axEvent, 'Color', [1, 1, 1]);
-    PlotIntervals(vEvent, 'rectangles');
+    PlotIntervals(vEventWindow, 'rectangles');
 
     % % For each of the provided orderings, create plots of the associated spike
     % % trains and activity patterns.
@@ -107,7 +104,7 @@ end
 
 function vWindow = getTimeWindow(handles)
     % Get the current event.
-    vEvent = handles.mtxEvents(handles.nCurrentEvent, :);
+    vEventWindow = getWindow(handles.cellEvents{handles.nCurrentEvent});
 
     % Retrieve the user-set, padding-related information.
     strEventPadding = get(handles.tbxEventPadding, 'String');
@@ -119,23 +116,23 @@ function vWindow = getTimeWindow(handles)
 
     switch strEventPaddingUnits
       case '%'
-        dEventDuration = diff(vEvent);
+        dEventDuration = diff(vEventWindow);
         dPadding = (dEventPadding / 100) * dEventDuration;
       case 'ms'
         dPadding = dEventPadding / 1000;
       case 's'
         dPadding = dEventPadding;
       case 'total (ms)'
-        dPadding = (dEventPadding / 1000 - diff(vEvent)) / 2;
+        dPadding = (dEventPadding / 1000 - diff(vEventWindow)) / 2;
     end
 
     % Now that we have the padding, we can compute the time window.
-    vWindow = vEvent + [-dPadding, dPadding];
+    vWindow = vEventWindow + [-dPadding, dPadding];
 end
 
 function selectEvent(handles, nEvent)
     % Select the provided event, rounding to the appropriate range.
-    nNumEvents = size(handles.mtxEvents, 1);
+    nNumEvents = length(handles.cellEvents);
     handles.nCurrentEvent = max(1, min(nNumEvents, nEvent));
 
     % Display which event we're currently viewing.
@@ -149,7 +146,7 @@ end
 
 function selectNextEvent(handles)
     % Make sure that we select an event in the range.
-    nNumEvents = size(handles.mtxEvents, 1);
+    nNumEvents = length(handles.cellEvents);
     nCurrentEvent = handles.nCurrentEvent;
 
     if nCurrentEvent == nNumEvents
@@ -161,7 +158,7 @@ end
 
 function selectPreviousEvent(handles)
     % Make sure that we select an event in the range.
-    nNumEvents = size(handles.mtxEvents, 1);
+    nNumEvents = length(handles.cellEvents);
     nCurrentEvent = handles.nCurrentEvent;
 
     if nCurrentEvent == 1
@@ -184,13 +181,8 @@ function browseEvents_OpeningFcn(hObject, eventdata, handles, varargin)
 
     % The second parameter should be a list of events, either as a 2-column
     % matrix of event times or as a cell array of events.
-    if iscell(varargin{2})
-        mtxEvents = cell2mat(cellfcn(@(e) e.window, varargin{2}));
-    else
-        mtxEvents = varargin{2};
-    end
-
-    handles.mtxEvents = mtxEvents;
+    cellEvents = varargin{2};
+    handles.cellEvents = cellEvents;
 
     % Store the LFPs for this data set. Downsample them to 1250 Hz, and
     % center them (individually) locally at zero.
@@ -204,11 +196,10 @@ function browseEvents_OpeningFcn(hObject, eventdata, handles, varargin)
         handles.objLfps.Data(:, i) = vLfp - localmean(vLfp, nFilterLength);
     end
 
-    % Ensure that the event matrix has two columns and that there's at least one
-    % event.
-    assert(size(handles.mtxEvents, 2) == 2 && ~isempty(handles.mtxEvents), ...
-           ['The event matrix is not an appropriate size. See `help browseEvents` ' ...
-            'for more information.']);
+    % Ensure that the list of `Event`s is a non-empty list of `Event`s.
+    assert(~isempty(handles.cellEvents) && isa(handles.cellEvents{1}, 'Event'), ...
+           ['browseEvents: second argument must be a non-empty list of `Event`' ...
+            'objects. See `help browseEvents` for more information.']);
 
     % Initially, we want to display the first event.
     handles.nCurrentEvent = 1;
@@ -357,7 +348,7 @@ function btnRemoveEvent_Callback(hObject, eventdata, handles)
     % hObject    handle to btnRemoveEvent (see GCBO)
     % eventdata  reserved - to be defined in a future version of MATLAB
     % handles    structure with handles and user data (see GUIDATA)
-    handles.mtxEvents(handles.nCurrentEvent, :) = [];
+    handles.cellEvents(handles.nCurrentEvent) = [];
     selectEvent(handles, handles.nCurrentEvent);
 end
 
@@ -369,7 +360,9 @@ function btnMoveLeftEdge_Callback(hObject, eventdata, handles)
     axes(handles.axEvent);
     [x, ~] = ginput(1);
 
-    handles.mtxEvents(handles.nCurrentEvent, 1) = x;
+    evt = handles.cellEvents{handles.nCurrentEvent};
+    vEventWindow = getWindow(evt);
+    setWindow(evt, [x, vEventWindow(2)]);
     guidata(hObject, handles);
     updateGui(handles);
 end
@@ -382,7 +375,9 @@ function btnMoveRightEdge_Callback(hObject, eventdata, handles)
     axes(handles.axEvent);
     [x, ~] = ginput(1);
 
-    handles.mtxEvents(handles.nCurrentEvent, 2) = x;
+    evt = handles.cellEvents{handles.nCurrentEvent};
+    vEventWindow = getWindow(evt);
+    setWindow(evt, [vEventWindow(1), x]);
     guidata(hObject, handles);
     updateGui(handles);
 end
@@ -398,28 +393,28 @@ function btnSplitEvent_Callback(hObject, eventdata, handles)
     [x, ~] = ginput(1);
 
     % Some convenience variables.
-    mtxEvents = handles.mtxEvents;
+    cellEvents = handles.cellEvents;
     nCurrentEvent = handles.nCurrentEvent;
-    vEvent = mtxEvents(nCurrentEvent, :);
+    vEventWindow = getWindow(cellEvents(nCurrentEvent));
 
     % How much time do we want between the newly-created events? Let's go with
     % 20 milliseconds.
     dTimeSpacing = 0.001;
 
     % Ensure that the selected x value lies within the current event.
-    if x <= vEvent(1) + dTimeSpacing || x >= vEvent(2) - dTimeSpacing
+    if x <= vEventWindow(1) + dTimeSpacing || x >= vEventWindow(2) - dTimeSpacing
         errordlg('Please select a time within the current event window.');
     else
         % First, duplicate the event.
-        mtxEvents = [mtxEvents(1 : nCurrentEvent, :); ...
-                     mtxEvents(nCurrentEvent : end, :)];
+        cellEvents = [cellEvents(1 : nCurrentEvent); ...
+                      cellEvents(nCurrentEvent : end)];
 
         % Now, set the newly-created events' endpoints.
-        mtxEvents(nCurrentEvent, 2) = x - dTimeSpacing;
-        mtxEvents(nCurrentEvent + 1, 1) = x + dTimeSpacing;
+        setWindow(cellEvents(nCurrentEvent), [vEventWindow(1), x - dTimeSpacing]);
+        setWindow(cellEvents(nCurrentEvent + 1), [x + dTimeSpacing, vEventWindow(2)]);
 
         % Save the events to the `handles` object and update the GUI data.
-        handles.mtxEvents = mtxEvents;
+        handles.cellEvents = cellEvents;
         guidata(hObject, handles);
         updateGui(handles);
     end

@@ -13,7 +13,7 @@
 % OPTIONAL PARAMETERS:
 %    sampleRate (default: 2e4)
 %       .
-%    duration (default: [0.025, 0.200])
+%    vDuration (default: [0.025, 0.200])
 %       .
 %    minSeparation (default: 0.030)
 %       .
@@ -58,8 +58,8 @@ function ripples = detectRipples(this, varargin)
     % Now that the optional parameter values have been set, we can use them to
     % deterine the values of certain variables to be used during the
     % computation.
-    minDuration = ceil(duration(1) * sampleRate(this));
-    maxDuration = floor(duration(2) * sampleRate(this));
+    minDuration = ceil(vDuration(1) * sampleRate(this));
+    maxDuration = floor(vDuration(2) * sampleRate(this));
     minSeparation = ceil(minSeparation * sampleRate(this));
     minPeakSep = minDuration + minSeparation;
 

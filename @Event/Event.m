@@ -33,6 +33,14 @@ classdef Event
     end
 
     methods (Access = public)
+        function vWindow = getWindow(this)
+            vWindow = this.window;
+        end
+
+        function setWindow(this, vWindow)
+            this.window = vWindow;
+        end
+
         function setType(this, strValue)
             assert(@ischar, strValue, 'Event.setType: type value must be a string');
             this.type = strValue;
@@ -107,7 +115,7 @@ classdef Event
         %       A three-column matrix, each row of which represents an RGB color.
         %       The colors will be used cyclically.
         %    axPlot (default: `gca()`)
-
+        function plot(this, varargin)
             % Optional parameters
             vOrdering = activeCells(this);
             mtxColors = lines();
@@ -115,6 +123,9 @@ classdef Event
 
             cellAllowedParams = {'axPlot', 'vOrdering', 'mtxColors'};
             parseNamedParams(varargin, cellAllowedParams);
+
+            % Get the spike trains.
+            cellTrains = spikeTrains(this);
 
             % Store the number of colors that we have to work with.
             nColors = size(mtxColors, 1);
@@ -161,7 +172,7 @@ classdef Event
             plot(evtSequence, varargin{:});
         end
 
-        function vOrder = centerofmass(this)
+        function [vCentersOfMass, vNeurons] = centerofmass(this)
             vSequence = sequence(this);
             vNeurons = activeCells(this);
             nNeurons = length(vNeurons);
@@ -175,7 +186,8 @@ classdef Event
         end
 
         function vOrder = orderCells(this)
-            [~, vOrder] = sort(centerofmass(this));
+            [vCenters, vNeurons] = centerofmass(this);
+            [~, vOrder] = sort(vCenters);
             vOrder = vNeurons(vOrder);
         end
 
@@ -188,33 +200,37 @@ classdef Event
                 nMax = max(this.spikes);
             end
 
-            % Initialize
-            vCells = activeCells(this);
-            nCells = length(vCells);
-            cellTrains = spikeTrains(this, vCells);
-            mtxCounts = sparse([], [], [], nMax, nMax, nCells^2);
+            if isinf(dTime)
+                mtxBias = orderBias(sequence(this));
+            else
+                % Initialize
+                vCells = activeCells(this);
+                nCells = length(vCells);
+                cellTrains = spikeTrains(this, vCells);
+                mtxCounts = sparse([], [], [], nMax, nMax, nCells^2);
 
-            % Count
-            for i = 1 : nCells - 1
-                n1 = vCells(i);
-                vTrain1 = cellTrains{i};
+                % Count
+                for i = 1 : nCells - 1
+                    n1 = vCells(i);
+                    vTrain1 = cellTrains{i};
 
-                for j = i + 1 : nCells
-                    n2 = vCells(j);
-                    vTrain2 = cellTrains{j};
+                    for j = i + 1 : nCells
+                        n2 = vCells(j);
+                        vTrain2 = cellTrains{j};
 
-                    mtxGaps = bsxfun(@minus, row(vTrain2), col(vTrain1));
-                    mtxCounts(n1, n2) = nnz((mtxGaps > 0) & (mtxGaps < dTime));
-                    mtxCounts(n2, n1) = nnz((mtxGaps < 0) & (mtxGaps > -dTime));
-                end
+                        mtxGaps = bsxfun(@minus, row(vTrain2), col(vTrain1));
+                        mtxCounts(n1, n2) = nnz((mtxGaps > 0) & (mtxGaps < dTime));
+                        mtxCounts(n2, n1) = nnz((mtxGaps < 0) & (mtxGaps > -dTime));
+                    end
+                 end
+
+                % Normalize
+                mtxBias = sparse(nMax, nMax);
+                mtxSum = mtxCounts + mtxCounts';
+                mtxDiff = mtxCounts - mtxCounts';
+                vLocs = find(mtxSum);
+                mtxBias(vLocs) = mtxDiff(vLocs) ./ mtxSum(vLocs);
             end
-
-            % Normalize
-            mtxBias = sparse(nMax, nMax);
-            mtxSum = mtxCounts + mtxCounts';
-            mtxDiff = mtxCounts - mtxCounts';
-            vLocs = find(mtxSum);
-            mtxBias(vLocs) = mtxDiff(vLocs) ./ mtxSum(vLocs);
         end
     end
 end

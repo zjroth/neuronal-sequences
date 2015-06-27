@@ -32,6 +32,10 @@
 %         1     1     0     0     0
 %         0     0     0     0     0
 function mtxCounts = biascount(vSequence, nMax)
+    if nargin < 2
+        nMax = max(vSequence);
+    end
+
     % Find the unique elements of the sequence.  This is much faster than
     % calling `unique(vSequence)`.
     vNeurons = zeros(1, nMax);

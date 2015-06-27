@@ -13,13 +13,13 @@ function [mtxRho, vIncluded] = computeRhoMatrix(cellSequences, vNumActiveNeurons
     % sequences to be processed to those with an appropriate number of active
     % neurons. Keep track of which sequences are to be included, and store the
     % total number of sequences that we'll be working with.
-    vSeqSetSizes = sum(activitymatrix(cellSequences), 2);
+    vSeqSetSizes = sum(activity(cellSequences), 2);
     vIncluded = find(vNumActiveNeurons(1) <= vSeqSetSizes & vSeqSetSizes <= vNumActiveNeurons(2));
     nSequences = length(vIncluded);
 
     % Find the neuron activity for each sequence and the number of neurons that
     % are active in each pair of sequences.
-    mtxNeuronActivity = activitymatrix(cellSequences(vIncluded));
+    mtxNeuronActivity = activity(cellSequences(vIncluded));
     mtxNumCoactive = mtxNeuronActivity * mtxNeuronActivity';
 
     % Store the total number of neurons.
