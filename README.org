@@ -1,5 +1,7 @@
 #+LATEX_HEADER: \usepackage[margin=1in]{geometry}
 
+* Description
+
 This code is designed to provide tools for working with neuronal sequences. The
 project started originally as a set of functions to detect sharp-wave ripples in
 the hippocampus. The code breaks down into three basic pieces:
