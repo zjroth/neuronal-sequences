@@ -1,26 +1,15 @@
-%
 % USAGE:
-%
 %     objRippleWave = getRippleWave(this, varargin)
 %
 % DESCRIPTION:
-%
 %    Compute a ripple-wave signal.
 %
-% ARGUMENTS:
-%
-%    .
-%       .
-%
 % RETURNS:
-%
 %    rippleWaveTs
 %       A TimeSeries object whose data is the resultant ripple-wave signal
 %
 % NOTE:
-%
 %    See `help getRippleSpectrogram` for optional parameters.
-%
 function objRippleWave = getRippleWave(this, varargin)
     if ~isfield(this.current, 'rippleWave')
         % Retrieve the spectrogram that's used to compute the ripple wave.

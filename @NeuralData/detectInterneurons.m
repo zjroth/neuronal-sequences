@@ -1,14 +1,10 @@
-%
 % USAGE:
-%
 %    detectInterneurons(this)
 %
 % DESCRIPTION:
-%
 %    Detect cells that are interneurons in this data. The results of this
 %    computation are stored and can be retrieved using the method
 %    `getInterneurons`.
-%
 function detectInterneurons(this)
     % The minimum firing rate of an interneuron (in Hertz).
     dMinFiringRate = 10;

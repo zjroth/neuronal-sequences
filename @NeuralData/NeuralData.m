@@ -1,21 +1,6 @@
-%
 % DESCRIPTION:
-%
 %    Provide convenient access to neural data and methods related to ripple
 %    detection.
-%
-% PROPERTIES:
-%
-%    .
-%
-% METHODS:
-%
-%    .
-%
-% STATIC METHODS:
-%
-%    .
-%
 classdef NeuralData < handle
     properties (GetAccess = public, SetAccess = protected)
         Clu = []
@@ -62,7 +47,6 @@ classdef NeuralData < handle
     end
 
     methods (Access = public)
-        %---------------------------------------------------------------
         % USAGE:
         %    obj = NeuralData()
         %
@@ -80,7 +64,6 @@ classdef NeuralData < handle
         %       base recording name is inferred from directory path.
         %    strPath
         %       The path to the folder in which the data resides
-        %---------------------------------------------------------------
         function this = NeuralData(uknDataPath, strCachePath)
             % Find the location of the .dat file for this recording.
             if iscell(uknDataPath)

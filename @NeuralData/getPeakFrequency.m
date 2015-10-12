@@ -1,35 +1,23 @@
-%
 % USAGE:
-%
 %    dPeakFreq = getPeakFrequency(this, vTimeWindow, vFrequencyWindow, bWhiten)
 %
 % DESCRIPTION:
-%
 %    Get the peak frequency in the given ranges using a spectrogram.
 %
 % ARGUMENTS:
-%
 %    vTimeWindow
-%
 %       The time window (in seconds) in which to look for a peak frequency; this
 %       should be a 2-entry vector
-%
 %    vFrequencyWindow (default: [110, 190])
-%
 %       A vector specifying the minimum and maximum frequencies (in Hertz) to
 %       use while computing the peak.
-%
 %    bWhiten (default: true)
-%
 %       A boolean specifying whether the signal should be whitened before
 %       performing the FFT on it
 %
 % RETURNS:
-%
 %    dPeakFreq
-%
 %       The peak frequency (in Hertz) within the given windows
-%
 function dPeakFreq = getPeakFrequency(this, vTimeWindow, vFrequencyWindow, ...
                                       bWhiten)
     % Use the default spectrogram data by default

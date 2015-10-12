@@ -2,35 +2,31 @@
 %    ripples = detectRipples(this, ...)
 %
 % DESCRIPTION:
-%    Detect sharp-wave ripples.
-%
-% ARGUMENTS:
-%    sharpWave
-%       .
-%    rippleWave
-%       .
+%    Detect sharp-wave ripple (SWR) events.
 %
 % OPTIONAL PARAMETERS:
-%    sampleRate (default: 2e4)
-%       .
-%    vDuration (default: [0.025, 0.200])
-%       .
+%    vDuration (default: [0.025, 0.250])
+%       The permissable durations (in seconds) for the detected SWR events
 %    minSeparation (default: 0.030)
-%       .
+%       The minimum separation (in seconds) between subsequent SWR events
 %    minSharpWavePeak (default: 4)
-%       .
-%    minSharpWave (default: 1.5)
-%       .
-%    minRippleWavePeak (default: 2)
-%       .
-%    minRippleWave (default: 1)
-%       .
-%    minFirstDerivative (default: 3)
-%       .
-%    minSecondDerivative (default: 3)
-%       .
-%    dMinSmoothedSpike (default: 0)
-%       .
+%       Each detected SWR event contains a maximum peak in the corresponding
+%       sharp-wave signal (which is a smoothed version of the difference
+%       between the upper and lower LFP signals). This controls the
+%       minimum-allowed peak (in standard deviations from the mean) for a
+%       permissible event.
+%    minSharpWave (default: 1.25)
+%       Similar to `minSharpWave`, this controls the minimum threshold for
+%       initial estimation of SWR events.
+%    minFirstDerivative (default: 2.75)
+%       This ensures that the separation within a SWR event envelope is
+%       sudden enough.
+%    minSecondDerivative (default: 6)
+%       This is used to split "doublet" events, i.e., SWR events that are so
+%       close to each other that they are joined when considering only the
+%       other criteria.
+%    dMinSmoothedSpike (default: 1.3)
+%       Some criterion on the spikes within a SWR event
 %
 % RETURNS:
 %    ripples
@@ -139,9 +135,8 @@ function ripples = detectRipples(this, varargin)
     % Convert the ripples from index data to time data and store them in this
     % object.
     ripples = (ripples - 1) / sampleRate(this) + objSharpWave.Time(1);
-    this.current.ripples = ripples;
-
     this.current.ripples = getEvents(this, ripples(:, [1, 3]), 'ripple');
+    ripples = this.current.ripples;
 end
 
 function vSpikes = getSpikeTimes(this)
